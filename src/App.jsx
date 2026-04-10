@@ -480,17 +480,6 @@ function App() {
             </aside>
           </div>
 
-          <div className="result-grid">
-            <article className="result-card">
-              <h3>这版怎么判</h3>
-              <p>这次不是按某几道题直接给你贴玩法标签，而是先把你在 8 个隐藏维度上的倾向攒出来，再和人格模板做相似度匹配。</p>
-            </article>
-            <article className="result-card">
-              <h3>接下来还会动哪</h3>
-              <p>现在骨架已经像 SBTI 了，下一步最值得继续抠的，就是把人格名字、签名和结果文案写得更像真正会被网友认领的身份梗。</p>
-            </article>
-          </div>
-
           <div className="result-grid dimension-grid">
             {DIMENSION_ORDER.map((code) => {
               const meta = DIMENSION_META[code]
