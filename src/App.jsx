@@ -66,28 +66,58 @@ function resolveResult(scores, flags) {
   }
 }
 
+function getLeadingFlag(flags) {
+  return [...Object.entries(flags)].sort((a, b) => b[1] - a[1])[0]
+}
+
+function buildEvidenceLine(scores) {
+  const [first, second] = getTopTypes(scores)
+  const gap = scores[first] - scores[second]
+
+  if (gap <= 1) {
+    return `你表面是 ${TYPE_META[first].title}，骨子里还混着 ${TYPE_META[second].title} 的病。`
+  }
+
+  if (gap >= 4) {
+    return `后台给出的结论非常坚定：你几乎没有给自己留下任何狡辩空间。`
+  }
+
+  return `你不是轻微倾向，你是真的会在日常里稳定散发 ${TYPE_META[first].title} 的味。`
+}
+
+function buildFlagLine(flags) {
+  const [flagCode, value] = getLeadingFlag(flags)
+
+  if (!value) {
+    return '隐藏病灶暂时不重，但不代表你没有，只代表你这次还算会装。'
+  }
+
+  return `后台额外抓到的病灶是 ${HIDDEN_META[flagCode].title}（${value} 级）。这部分比你主人格还像案底。`
+}
+
 function buildShareText(result, scores, flags) {
   const topLines = getTopTypes(scores)
-    .map((code, index) => `${index + 1}. ${code} ${TYPE_META[code].title} ${scores[code]}分`)
+    .map((code, index) => `${index + 1}. ${code} ${TYPE_META[code].title} ${scores[code]} 分`)
     .join('\n')
 
   const hiddenLines = Object.entries(flags)
     .filter(([, value]) => value > 0)
-    .map(([code, value]) => `${code} ${value}`)
+    .map(([code, value]) => `${code}:${value}`)
     .join(' / ')
 
   return [
-    `我在 RBTI 里测出来是 ${result.code}（${result.meta.title}）`,
+    `我在 RBTI 里被判成了 ${result.code} ${result.meta.title}`,
     result.meta.shareLine,
     '',
-    `系统判词：${result.meta.summary}`,
+    `系统锐评：${result.meta.summary}`,
+    `抓包证据：${buildEvidenceLine(scores)}`,
+    `附加病灶：${buildFlagLine(flags)}`,
     '',
-    '后台判你最像这仨：',
+    '后台判我最像这仨：',
     topLines,
-    hiddenLines ? '' : null,
-    hiddenLines ? `隐藏病灶：${hiddenLines}` : null,
+    hiddenLines ? `隐藏病灶记录：${hiddenLines}` : null,
     '',
-    'MBTI 过时了，RBTI 来了。',
+    '这个测试不是在懂你，是在公开处刑你。',
   ]
     .filter(Boolean)
     .join('\n')
@@ -107,6 +137,7 @@ function App() {
   const activeQuestion = QUESTIONS[questionIndex]
   const answeredCount = Object.keys(pickedOptions).length
   const progress = Math.round((answeredCount / totalQuestions) * 100)
+  const topTypes = getTopTypes(scores)
 
   function resetExperience() {
     setScreen('intro')
@@ -191,31 +222,31 @@ function App() {
         <section className="intro-screen">
           <div className="intro-card">
             <p className="eyebrow">提瓦特电子审判处</p>
-            <h1>MBTI 过时了，RBTI 来了。</h1>
+            <h1>这不是人格测试，这是原神玩家公开处刑器。</h1>
             <p className="intro-lead">
-              这玩意不是心理测试，是把你的原神日常拿出来公开尸检。树脂、原石、深渊、剧诗、开图、嘴硬，都会把你在提瓦特到底是什么成分抖出来。
+              这版不再温柔分析你，而是专门抓你在树脂、抽卡、深渊、剧情、地图和社区发言里的真实嘴脸。测出来不是“你像什么”，是“你到底丢人在哪儿”。
             </p>
 
             <div className="intro-grid">
               <article className="mini-panel">
-                <strong>先说清楚</strong>
+                <strong>这版改了什么</strong>
                 <p>
-                  这版明显更往中文原神社区的整活口吻改了，不走温柔分析路线，走的是“系统一边装正经，一边把你挂出来示众”的路线。
+                  题目整体换成了更像中文原神社区真会说出口的话，减少直给自报家门，增加嘴硬、反差、旧伤和自我打脸，尽量让系统像在现场抓包。
                 </p>
               </article>
               <article className="mini-panel">
-                <strong>试玩机制</strong>
+                <strong>为什么更适合传播</strong>
                 <p>
-                  当前版本 36 题，中途系统只会嘴你两次，而且会看你实时答题倾向来阴阳你，不再是固定播报。你要是被骂得太准，先别怪网页。
+                  认同感不够，玩家就只会点头；羞耻感和惊讶感不够，玩家就不会截图。这一版的目标不是“准”，而是“准到你想立刻发给朋友骂系统懂太多”。
                 </p>
               </article>
             </div>
 
             <div className="intro-actions">
               <button type="button" className="primary-btn" onClick={startQuiz}>
-                开始验尸
+                开始接受审问
               </button>
-              <span className="subtle-note">预计耗时 8 到 12 分钟</span>
+              <span className="subtle-note">36 题，系统中途只插嘴 2 次，但每次都尽量往痛处戳</span>
             </div>
           </div>
         </section>
@@ -261,9 +292,9 @@ function App() {
           </article>
 
           <footer className="quiz-footer">
-            <p>系统提醒：每一道选择都会留下案底，你现在嘴硬，结果页会替你结案。</p>
+            <p>系统提醒：你每点一次选项，都在给结果页补充新的作案细节。</p>
             <button type="button" className="ghost-btn" onClick={resetExperience}>
-              不测了，先跑
+              先不测了，我想逃
             </button>
           </footer>
         </section>
@@ -276,7 +307,7 @@ function App() {
             <h2>{currentTaunt.title}</h2>
             <p>{currentTaunt.body}</p>
             <button type="button" className="primary-btn" onClick={() => setScreen('quiz')}>
-              行，继续骂
+              行，你继续嘴硬
             </button>
           </div>
         </section>
@@ -287,7 +318,7 @@ function App() {
           <div className="result-hero">
             <div className="result-card main-result">
               <p className="eyebrow">
-                {result.kind === 'hidden' ? '隐藏人格接管现场' : '系统最终判词'}
+                {result.kind === 'hidden' ? '隐藏人格已经接管现场' : '后台最终判词'}
               </p>
               <h2>
                 {result.code}
@@ -295,11 +326,12 @@ function App() {
               </h2>
               <p className="summary-pill">{result.meta.summary}</p>
               <p className="result-body">{result.meta.body}</p>
+              <p className="result-body">{result.meta.verdict}</p>
               <blockquote>{result.meta.shareLine}</blockquote>
 
               <div className="result-actions">
                 <button type="button" className="primary-btn" onClick={copyResult}>
-                  {copied ? '结果文案已复制' : '复制结果文案'}
+                  {copied ? '结果文案已复制' : '复制群聊处刑文案'}
                 </button>
                 <button type="button" className="ghost-btn" onClick={startQuiz}>
                   再测一次
@@ -308,43 +340,37 @@ function App() {
             </div>
 
             <aside className="result-card side-panel">
-              <h3>后台判你最像这仨</h3>
+              <h3>后台抓到的主犯</h3>
               <div className="rank-list">
-                {getTopTypes(scores).map((code, index) => (
+                {topTypes.map((code, index) => (
                   <div key={code} className="rank-item">
                     <span className="rank-index">{index + 1}</span>
                     <div>
                       <strong>{code}</strong>
                       <p>{TYPE_META[code].title}</p>
                     </div>
-                    <span className="rank-score">{scores[code]}分</span>
+                    <span className="rank-score">{scores[code]} 分</span>
                   </div>
                 ))}
               </div>
 
-              <h3>隐藏病灶</h3>
-              <div className="flag-grid">
-                {Object.entries(flags).map(([code, value]) => (
-                  <div key={code} className="flag-item">
-                    <span>{code}</span>
-                    <strong>{value}</strong>
-                  </div>
-                ))}
-              </div>
+              <h3>系统抓包结论</h3>
+              <p>{buildEvidenceLine(scores)}</p>
+              <p>{buildFlagLine(flags)}</p>
             </aside>
           </div>
 
           <div className="result-grid">
             <article className="result-card">
-              <h3>友情提示</h3>
+              <h3>为什么上版不够爆</h3>
               <p>
-                这玩意只适合拿来发群、互损、钓评论，不适合拿去相亲、招人、查成分、判断谁更懂原神，也不适合拿去给自己上价值。
+                因为它更像“分类正确”而不是“抓包成功”。玩家认同不等于玩家惊讶，惊讶不够，就不会截图；羞耻感不够，也不会主动发给熟人让大家一起笑。
               </p>
             </article>
             <article className="result-card">
-              <h3>调研建议</h3>
+              <h3>这版瞄准的传播点</h3>
               <p>
-                这版现在最值得看三件事：36 题会不会掉人、中途动态吐槽会不会让人继续点、以及哪种人格最容易被玩家拿去评论区对号入座。
+                题目尽量不让人轻松自报家门，而是通过嘴硬、反差、旧伤和社区黑话把人一步步逼出原形。最理想的效果不是“有点准”，而是“这网页怎么把我偷偷观察过”。
               </p>
             </article>
           </div>
