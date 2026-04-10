@@ -2,6 +2,10 @@ import { useState } from 'react'
 import './App.css'
 import {
   buildQuizQuestions,
+  deriveTypeScores,
+  DIMENSION_META,
+  DIMENSION_ORDER,
+  getDimensionLevels,
   getDynamicTaunt,
   HIDDEN_META,
   TAUNT_BREAKPOINTS,
@@ -9,7 +13,17 @@ import {
   TYPE_ORDER,
 } from './data/rbti'
 
-const EMPTY_SCORES = TYPE_ORDER.reduce((acc, code) => {
+const EMPTY_TYPE_SCORES = TYPE_ORDER.reduce((acc, code) => {
+  acc[code] = 0
+  return acc
+}, {})
+
+const EMPTY_DIMENSION_TOTALS = DIMENSION_ORDER.reduce((acc, code) => {
+  acc[code] = 0
+  return acc
+}, {})
+
+const EMPTY_DIMENSION_COUNTS = DIMENSION_ORDER.reduce((acc, code) => {
   acc[code] = 0
   return acc
 }, {})
@@ -28,7 +42,7 @@ const HIDDEN_PRIORITY = [
   { code: 'PAIM', min: 4 },
 ]
 
-const NOTICE_STORAGE_KEY = 'rbti_notice_seen_v1'
+const NOTICE_STORAGE_KEY = 'rbti_notice_seen_v2'
 
 function cloneMap(map) {
   return Object.keys(map).reduce((acc, key) => {
@@ -37,18 +51,18 @@ function cloneMap(map) {
   }, {})
 }
 
-function getTopTypes(scores) {
+function getTopTypes(typeScores) {
   return [...TYPE_ORDER]
     .sort((a, b) => {
-      if (scores[b] !== scores[a]) return scores[b] - scores[a]
+      if (typeScores[b] !== typeScores[a]) return typeScores[b] - typeScores[a]
       return TYPE_ORDER.indexOf(a) - TYPE_ORDER.indexOf(b)
     })
     .slice(0, 3)
 }
 
-function resolveResult(scores, flags) {
+function resolveResult(typeScores, flags) {
   const hiddenHit = HIDDEN_PRIORITY.find((rule) => flags[rule.code] >= rule.min)
-  const topTypes = getTopTypes(scores)
+  const topTypes = getTopTypes(typeScores)
 
   if (hiddenHit) {
     return {
@@ -72,34 +86,45 @@ function getLeadingFlag(flags) {
   return [...Object.entries(flags)].sort((a, b) => b[1] - a[1])[0]
 }
 
-function buildEvidenceLine(scores) {
-  const [first, second] = getTopTypes(scores)
-  const gap = scores[first] - scores[second]
+function buildEvidenceLine(typeScores) {
+  const [first, second] = getTopTypes(typeScores)
+  const gap = typeScores[first] - typeScores[second]
 
-  if (gap <= 1) {
-    return `你表面是 ${TYPE_META[first].title}，骨子里还混着 ${TYPE_META[second].title} 的味。`
+  if (gap <= 4) {
+    return `你表面是 ${TYPE_META[first].title}，但身上还混着不少 ${TYPE_META[second].title} 的味。`
   }
 
-  if (gap >= 4) {
+  if (gap >= 16) {
     return '后台这次判得很干脆：你几乎没给自己留下狡辩空间。'
   }
 
-  return `你不是轻微倾向，你是平时就稳定散发 ${TYPE_META[first].title} 气质的人。`
+  return `你不是轻微偏向，你平时就很容易散发 ${TYPE_META[first].title} 的气质。`
 }
 
 function buildFlagLine(flags) {
   const [flagCode, value] = getLeadingFlag(flags)
 
   if (!value) {
-    return '隐藏病灶这次不算重，但不代表你没有，只代表你这次装得还行。'
+    return '隐藏病灶这次不算重，但不代表没有，只代表你这次装得还行。'
   }
 
-  return `后台额外抓到的病灶是 ${HIDDEN_META[flagCode].title}（${value} 级）。这部分比你主人格还像案底。`
+  return `后台额外抓到的病灶是 ${HIDDEN_META[flagCode].title}（${value}级）。这部分比你主人格还像案底。`
 }
 
-function buildShareText(result, scores, flags) {
-  const topLines = getTopTypes(scores)
-    .map((code, index) => `${index + 1}. ${code} ${TYPE_META[code].title} ${scores[code]} 分`)
+function buildDimensionSummary(dimensionTotals, dimensionCounts) {
+  const levels = getDimensionLevels(dimensionTotals, dimensionCounts)
+
+  return DIMENSION_ORDER.map((code) => {
+    const meta = DIMENSION_META[code]
+    const level = levels[code]
+    const label = level === 'L' ? meta.low : level === 'H' ? meta.high : meta.mid
+    return `${meta.label}：${label}`
+  }).join(' / ')
+}
+
+function buildShareText(result, typeScores, flags, dimensionTotals, dimensionCounts) {
+  const topLines = getTopTypes(typeScores)
+    .map((code, index) => `${index + 1}. ${code} ${TYPE_META[code].title} ${typeScores[code]}%`)
     .join('\n')
 
   const hiddenLines = Object.entries(flags)
@@ -112,8 +137,9 @@ function buildShareText(result, scores, flags) {
     result.meta.shareLine,
     '',
     `系统锐评：${result.meta.summary}`,
-    `抓包证据：${buildEvidenceLine(scores)}`,
+    `抓包证据：${buildEvidenceLine(typeScores)}`,
     `附加病灶：${buildFlagLine(flags)}`,
+    `维度截图：${buildDimensionSummary(dimensionTotals, dimensionCounts)}`,
     '',
     '后台判我最像这仨：',
     topLines,
@@ -129,7 +155,9 @@ function freshQuizState() {
   return {
     questionIndex: 0,
     quizQuestions: buildQuizQuestions(),
-    scores: cloneMap(EMPTY_SCORES),
+    typeScores: cloneMap(EMPTY_TYPE_SCORES),
+    dimensionTotals: cloneMap(EMPTY_DIMENSION_TOTALS),
+    dimensionCounts: cloneMap(EMPTY_DIMENSION_COUNTS),
     flags: cloneMap(EMPTY_FLAGS),
     pickedOptions: {},
     currentTaunt: null,
@@ -142,7 +170,9 @@ function App() {
   const [screen, setScreen] = useState('intro')
   const [quizQuestions, setQuizQuestions] = useState([])
   const [questionIndex, setQuestionIndex] = useState(0)
-  const [scores, setScores] = useState(cloneMap(EMPTY_SCORES))
+  const [typeScores, setTypeScores] = useState(cloneMap(EMPTY_TYPE_SCORES))
+  const [dimensionTotals, setDimensionTotals] = useState(cloneMap(EMPTY_DIMENSION_TOTALS))
+  const [dimensionCounts, setDimensionCounts] = useState(cloneMap(EMPTY_DIMENSION_COUNTS))
   const [flags, setFlags] = useState(cloneMap(EMPTY_FLAGS))
   const [pickedOptions, setPickedOptions] = useState({})
   const [currentTaunt, setCurrentTaunt] = useState(null)
@@ -157,7 +187,8 @@ function App() {
   const activeQuestion = quizQuestions[questionIndex]
   const answeredCount = Object.keys(pickedOptions).length
   const progress = totalQuestions ? Math.round((answeredCount / totalQuestions) * 100) : 0
-  const topTypes = getTopTypes(scores)
+  const topTypes = getTopTypes(typeScores)
+  const dimensionLevels = getDimensionLevels(dimensionTotals, dimensionCounts)
 
   function closeNotice() {
     setNoticeOpen(false)
@@ -170,7 +201,9 @@ function App() {
     setScreen('intro')
     setQuizQuestions([])
     setQuestionIndex(0)
-    setScores(cloneMap(EMPTY_SCORES))
+    setTypeScores(cloneMap(EMPTY_TYPE_SCORES))
+    setDimensionTotals(cloneMap(EMPTY_DIMENSION_TOTALS))
+    setDimensionCounts(cloneMap(EMPTY_DIMENSION_COUNTS))
     setFlags(cloneMap(EMPTY_FLAGS))
     setPickedOptions({})
     setCurrentTaunt(null)
@@ -184,7 +217,9 @@ function App() {
     setScreen('quiz')
     setQuizQuestions(next.quizQuestions)
     setQuestionIndex(next.questionIndex)
-    setScores(next.scores)
+    setTypeScores(next.typeScores)
+    setDimensionTotals(next.dimensionTotals)
+    setDimensionCounts(next.dimensionCounts)
     setFlags(next.flags)
     setPickedOptions(next.pickedOptions)
     setCurrentTaunt(next.currentTaunt)
@@ -193,17 +228,18 @@ function App() {
   }
 
   function handleOptionSelect(option) {
-    const nextScores = cloneMap(scores)
+    const nextTotals = cloneMap(dimensionTotals)
+    const nextCounts = cloneMap(dimensionCounts)
     const nextFlags = cloneMap(flags)
 
-    Object.entries(option.scores || {}).forEach(([code, value]) => {
-      nextScores[code] += value
-    })
+    nextTotals[activeQuestion.dimension] += option.value
+    nextCounts[activeQuestion.dimension] += 1
 
     Object.entries(option.flags || {}).forEach(([code, value]) => {
       nextFlags[code] += value
     })
 
+    const nextTypeScores = deriveTypeScores(nextTotals, nextCounts)
     const nextPicked = {
       ...pickedOptions,
       [activeQuestion.id]: option.label,
@@ -211,20 +247,22 @@ function App() {
 
     const nextCount = answeredCount + 1
 
-    setScores(nextScores)
+    setDimensionTotals(nextTotals)
+    setDimensionCounts(nextCounts)
+    setTypeScores(nextTypeScores)
     setFlags(nextFlags)
     setPickedOptions(nextPicked)
     setCopied(false)
 
     if (nextCount === totalQuestions) {
-      setResult(resolveResult(nextScores, nextFlags))
+      setResult(resolveResult(nextTypeScores, nextFlags))
       setScreen('result')
       return
     }
 
     const tauntStage = TAUNT_BREAKPOINTS.indexOf(nextCount)
     if (tauntStage !== -1) {
-      const topType = getTopTypes(nextScores)[0]
+      const topType = getTopTypes(nextTypeScores)[0]
       setCurrentTaunt(getDynamicTaunt(tauntStage, topType, nextFlags))
       setQuestionIndex(questionIndex + 1)
       setScreen('taunt')
@@ -238,7 +276,9 @@ function App() {
     if (!result) return
 
     try {
-      await navigator.clipboard.writeText(buildShareText(result, scores, flags))
+      await navigator.clipboard.writeText(
+        buildShareText(result, typeScores, flags, dimensionTotals, dimensionCounts),
+      )
       setCopied(true)
     } catch {
       setCopied(false)
@@ -253,19 +293,19 @@ function App() {
         <section className="intro-screen">
           <div className="intro-card">
             <p className="eyebrow">提瓦特电子审判处</p>
-            <h1>今日不测强度，不测练度，只测你到底有多丢人。</h1>
+            <h1>今日不测练度，不测欧气，只测你在提瓦特到底是什么味。</h1>
             <p className="intro-lead">
-              这不是正经人格测试，这是提瓦特玩家电子归档系统。你负责三选一，后台负责把你归到最适合被群友嘲笑的那一类。
+              这次真的往 `SBTI` 的骨架上靠了。24题，三选一，题目都很短，后台不直接给你分类，而是先看你在树脂、卡池、剧情、联机这些小场景里，到底更像哪种反应。
             </p>
 
             <div className="intro-grid">
               <article className="mini-panel">
-                <strong>这玩意测什么</strong>
-                <p>测你是清体坐牢、卡池上头、深渊记仇，还是表面正常其实随时准备发病。</p>
+                <strong>这版像什么</strong>
+                <p>更像“原神味的 SBTI”，不是一张很长的原神问卷。你负责凭直觉点，后台负责偷偷归类。</p>
               </article>
               <article className="mini-panel">
-                <strong>怎么判</strong>
-                <p>24 题，3 选 1，中途系统只插嘴两次。你负责点，后台负责记仇和归类。</p>
+                <strong>这版测什么</strong>
+                <p>表面测的是选择，实际上测的是你是爱清体、爱上头、爱较真、爱整活，还是表面正常实则一直在发病。</p>
               </article>
             </div>
 
@@ -293,13 +333,13 @@ function App() {
                   ×
                 </button>
                 <p className="eyebrow">更新公告</p>
-                <h2>这版又动了哪些地方</h2>
+                <h2>这版重做了什么</h2>
                 <div className="notice-list">
-                  <p>题型已经收回到更像 `SBTI` 的骨架：24 题、每题 3 个选项，不再往长问卷那个方向跑偏。</p>
-                  <p>首页标语改成更整活的版本，不再把改版说明直接糊在玩家脸上。</p>
-                  <p>题目方向现在更偏“轻巧三选一”，目标是让你凭直觉点，不要再像在做调查表。</p>
-                  <p>中途吐槽依然保留 2 次，后台还是会根据你的实时倾向阴阳你。</p>
-                  <p>接下来重点继续盯两件事：题目有没有 `SBTI` 那种轻但损的味，以及结果够不够让人想截图转发。</p>
+                  <p>题型已经整体换成 `SBTI` 风格：24题、每题3选1，不再往长问卷方向乱长。</p>
+                  <p>后台现在不再直接按“地图党/剧情党”给你贴标签，而是先累计 8 个隐藏维度，再去匹配人格模板。</p>
+                  <p>人格结果也改成更像“可认领身份梗”的写法，目标是让你测完更想截图，而不是只觉得“有点准”。</p>
+                  <p>中途吐槽依旧保留 2 次，但会根据你当前最像的人格和隐藏病灶来阴阳你。</p>
+                  <p>接下来继续要盯的重点，是把每个人格写得更像真正会被网友认领和传播的身份标签。</p>
                 </div>
                 <div className="notice-actions">
                   <button type="button" className="primary-btn" onClick={closeNotice}>
@@ -355,7 +395,7 @@ function App() {
           </article>
 
           <footer className="quiz-footer">
-            <p>系统提醒：你现在每点一下，后台都在给你补一条案底。</p>
+            <p>系统提醒：你以为自己在选选项，后台其实在偷偷给你算人格模板相似度。</p>
             <button type="button" className="ghost-btn" onClick={resetExperience}>
               先不测了，我想逃
             </button>
@@ -412,25 +452,35 @@ function App() {
                       <strong>{code}</strong>
                       <p>{TYPE_META[code].title}</p>
                     </div>
-                    <span className="rank-score">{scores[code]} 分</span>
+                    <span className="rank-score">{typeScores[code]}%</span>
+                  </div>
+                ))}
+              </div>
+
+              <h3>八维落点</h3>
+              <div className="flag-grid">
+                {DIMENSION_ORDER.map((code) => (
+                  <div key={code} className="flag-item">
+                    <span>{DIMENSION_META[code].label}</span>
+                    <strong>{dimensionLevels[code]}</strong>
                   </div>
                 ))}
               </div>
 
               <h3>系统抓包结论</h3>
-              <p>{buildEvidenceLine(scores)}</p>
+              <p>{buildEvidenceLine(typeScores)}</p>
               <p>{buildFlagLine(flags)}</p>
             </aside>
           </div>
 
           <div className="result-grid">
             <article className="result-card">
-              <h3>友情提示</h3>
-              <p>这玩意适合发群、互损、对号入座，不适合拿去找工作、相亲和证明自己人格高贵。</p>
+              <h3>这版怎么判</h3>
+              <p>这次不是按某几道题直接给你贴玩法标签，而是先把你在 8 个隐藏维度上的倾向攒出来，再和人格模板做相似度匹配。</p>
             </article>
             <article className="result-card">
-              <h3>继续折腾</h3>
-              <p>如果这次测得不服，可以再来一轮。后台不会道歉，但很欢迎你继续送素材。</p>
+              <h3>接下来还会动哪</h3>
+              <p>现在骨架已经像 SBTI 了，下一步最值得继续抠的，就是把人格名字、签名和结果文案写得更像真正会被网友认领的身份梗。</p>
             </article>
           </div>
         </section>
