@@ -105,6 +105,54 @@
   margin-top: 28px;
 }
 
+.notice-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(35, 24, 15, 0.48);
+  backdrop-filter: blur(8px);
+}
+
+.notice-card {
+  width: min(760px, 100%);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  background: linear-gradient(180deg, rgba(255, 251, 241, 0.98), rgba(247, 241, 225, 0.96));
+  box-shadow: var(--shadow);
+  padding: 30px;
+}
+
+.notice-card h2 {
+  margin: 0 0 16px;
+  font-size: clamp(30px, 5vw, 46px);
+  line-height: 1.1;
+}
+
+.notice-list {
+  display: grid;
+  gap: 12px;
+  color: var(--muted);
+  line-height: 1.8;
+}
+
+.notice-list p {
+  margin: 0;
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.58);
+  border: 1px solid rgba(128, 95, 58, 0.14);
+}
+
+.notice-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 22px;
+}
+
 .primary-btn,
 .ghost-btn,
 .option-btn {
@@ -401,6 +449,7 @@
   }
 
   .intro-card,
+  .notice-card,
   .question-card,
   .main-result,
   .side-panel,

@@ -75,21 +75,21 @@ function buildEvidenceLine(scores) {
   const gap = scores[first] - scores[second]
 
   if (gap <= 1) {
-    return `你表面是 ${TYPE_META[first].title}，骨子里还混着 ${TYPE_META[second].title} 的病。`
+    return `你表面是 ${TYPE_META[first].title}，骨子里还混着 ${TYPE_META[second].title} 的味。`
   }
 
   if (gap >= 4) {
-    return '后台给出的结论非常坚定：你几乎没给自己留下狡辩空间。'
+    return '后台这次判得很干脆：你几乎没给自己留下狡辩空间。'
   }
 
-  return `你不是轻微倾向，你是真的会在日常里稳定散发 ${TYPE_META[first].title} 的味。`
+  return `你不是轻微倾向，你是平时就稳定散发 ${TYPE_META[first].title} 气质的人。`
 }
 
 function buildFlagLine(flags) {
   const [flagCode, value] = getLeadingFlag(flags)
 
   if (!value) {
-    return '隐藏病灶暂时不重，但不代表你没有，只代表你这次还算会装。'
+    return '隐藏病灶这次不算重，但不代表你没有，只代表你这次装得还行。'
   }
 
   return `后台额外抓到的病灶是 ${HIDDEN_META[flagCode].title}（${value} 级）。这部分比你主人格还像案底。`
@@ -146,6 +146,7 @@ function App() {
   const [currentTaunt, setCurrentTaunt] = useState(null)
   const [result, setResult] = useState(null)
   const [copied, setCopied] = useState(false)
+  const [noticeOpen, setNoticeOpen] = useState(true)
 
   const totalQuestions = quizQuestions.length
   const activeQuestion = quizQuestions[questionIndex]
@@ -239,23 +240,19 @@ function App() {
         <section className="intro-screen">
           <div className="intro-card">
             <p className="eyebrow">提瓦特电子审判处</p>
-            <h1>这版先往 SBTI 的骨架上收，不再把它做成普通问卷。</h1>
+            <h1>别装了，你在提瓦特什么德行，后台多少知道一点。</h1>
             <p className="intro-lead">
-              现在是 24 题、每题 3 个选项，题目更短，方向更明确。它应该更像那种“表面随手三选一，实际后台在悄悄给你往某种丢人类型上靠”的测试，而不是一份很长的原神主题调查表。
+              这不是正经人格测试，这是一份对原神玩家日常行为的赛博笔录。你点得越快，后台笑得越大声。
             </p>
 
             <div className="intro-grid">
               <article className="mini-panel">
-                <strong>这次改的核心</strong>
-                <p>
-                  重点不是继续加梗，而是把题型拉回更像 SBTI 的“三选一偏向题”。这样题面会更利落，玩家也更容易凭直觉选，不会老有在填问卷的感觉。
-                </p>
+                <strong>这玩意测什么</strong>
+                <p>测你是清体坐牢、卡池上头、深渊记仇，还是表面正常实则随时准备发病。</p>
               </article>
               <article className="mini-panel">
-                <strong>现在的方向</strong>
-                <p>
-                  原神味还在，但应该更像 SBTI 那种简短、轻巧、选项有偏向性的题。不是靠长篇解释你，而是靠几道题慢慢把你往某种味道上推。
-                </p>
+                <strong>怎么测</strong>
+                <p>24 题，3 选 1，中途系统只插嘴两次。你负责点，后台负责记仇。</p>
               </article>
             </div>
 
@@ -263,9 +260,36 @@ function App() {
               <button type="button" className="primary-btn" onClick={startQuiz}>
                 开始接受审问
               </button>
-              <span className="subtle-note">24 题，3 选 1，中途只插嘴 2 次</span>
+              <button type="button" className="ghost-btn" onClick={() => setNoticeOpen(true)}>
+                查看公告
+              </button>
+              <span className="subtle-note">温馨提示：嘴硬不会影响判刑，只会增加笑料</span>
             </div>
           </div>
+
+          {noticeOpen && (
+            <div className="notice-overlay" role="dialog" aria-modal="true" aria-label="更新公告">
+              <div className="notice-card">
+                <p className="eyebrow">更新公告</p>
+                <h2>这版改了什么</h2>
+                <div className="notice-list">
+                  <p>题型已经收回到更像 `SBTI` 的骨架：24 题、每题 3 个选项，不再做成长篇原神问卷。</p>
+                  <p>首页标语改成更整活的版本，不再把改版说明直接糊在玩家脸上。</p>
+                  <p>题目方向现在更偏“轻巧三选一”，目标是让你凭直觉点，而不是像在做调查表。</p>
+                  <p>中途吐槽依然保留 2 次，后台还是会根据你的实时倾向阴阳你。</p>
+                  <p>接下来重点会继续盯两件事：题目有没有 SBTI 那种轻但损的味，以及人格结果够不够让人想截图转发。</p>
+                </div>
+                <div className="notice-actions">
+                  <button type="button" className="primary-btn" onClick={() => setNoticeOpen(false)}>
+                    行，我知道了
+                  </button>
+                  <button type="button" className="ghost-btn" onClick={startQuiz}>
+                    直接开测
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </section>
       )}
 
@@ -273,7 +297,7 @@ function App() {
         <section className="quiz-screen">
           <header className="topbar">
             <div>
-              <p className="eyebrow">RBTI 随机审问版</p>
+              <p className="eyebrow">RBTI 审问现场</p>
               <h2>{activeQuestion.section}</h2>
             </div>
             <div className="progress-meta">
@@ -309,7 +333,7 @@ function App() {
           </article>
 
           <footer className="quiz-footer">
-            <p>系统提醒：现在这版不会连着盘问同一类病，但后台会把你的病统一记账。</p>
+            <p>系统提醒：你现在每点一下，后台都在给你补一条案底。</p>
             <button type="button" className="ghost-btn" onClick={resetExperience}>
               先不测了，我想逃
             </button>
@@ -379,16 +403,12 @@ function App() {
 
           <div className="result-grid">
             <article className="result-card">
-              <h3>这版在改什么</h3>
-              <p>
-                这次优先修的是题型，不是题量。之前更像“原神问卷”，现在更想往“原神味的 SBTI”上靠，也就是题目更短、选项更有方向、做题更靠直觉。
-              </p>
+              <h3>友情提示</h3>
+              <p>这玩意适合发群、互损、对号入座，不适合拿去找工作、相亲和证明自己人格高贵。</p>
             </article>
             <article className="result-card">
-              <h3>接下来还要看什么</h3>
-              <p>
-                这一版先把骨架掰正，后面最重要的还是两件事：题目是不是像 SBTI 那样轻巧但有梗，以及结果人格能不能像原版那样又损又让人想转发。
-              </p>
+              <h3>继续折腾</h3>
+              <p>如果这次测得不服，可以再来一轮。后台不会道歉，但很欢迎你继续送素材。</p>
             </article>
           </div>
         </section>
