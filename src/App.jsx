@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import './App.css'
 import {
+  buildQuizQuestions,
   getDynamicTaunt,
   HIDDEN_META,
-  QUESTIONS,
   TAUNT_BREAKPOINTS,
   TYPE_META,
   TYPE_ORDER,
@@ -79,7 +79,7 @@ function buildEvidenceLine(scores) {
   }
 
   if (gap >= 4) {
-    return `后台给出的结论非常坚定：你几乎没有给自己留下任何狡辩空间。`
+    return '后台给出的结论非常坚定：你几乎没给自己留下狡辩空间。'
   }
 
   return `你不是轻微倾向，你是真的会在日常里稳定散发 ${TYPE_META[first].title} 的味。`
@@ -117,14 +117,28 @@ function buildShareText(result, scores, flags) {
     topLines,
     hiddenLines ? `隐藏病灶记录：${hiddenLines}` : null,
     '',
-    '这个测试不是在懂你，是在公开处刑你。',
+    '这测试不是在懂你，是在公开处刑你。',
   ]
     .filter(Boolean)
     .join('\n')
 }
 
+function freshQuizState() {
+  return {
+    questionIndex: 0,
+    quizQuestions: buildQuizQuestions(),
+    scores: cloneMap(EMPTY_SCORES),
+    flags: cloneMap(EMPTY_FLAGS),
+    pickedOptions: {},
+    currentTaunt: null,
+    result: null,
+    copied: false,
+  }
+}
+
 function App() {
   const [screen, setScreen] = useState('intro')
+  const [quizQuestions, setQuizQuestions] = useState([])
   const [questionIndex, setQuestionIndex] = useState(0)
   const [scores, setScores] = useState(cloneMap(EMPTY_SCORES))
   const [flags, setFlags] = useState(cloneMap(EMPTY_FLAGS))
@@ -133,14 +147,15 @@ function App() {
   const [result, setResult] = useState(null)
   const [copied, setCopied] = useState(false)
 
-  const totalQuestions = QUESTIONS.length
-  const activeQuestion = QUESTIONS[questionIndex]
+  const totalQuestions = quizQuestions.length
+  const activeQuestion = quizQuestions[questionIndex]
   const answeredCount = Object.keys(pickedOptions).length
-  const progress = Math.round((answeredCount / totalQuestions) * 100)
+  const progress = totalQuestions ? Math.round((answeredCount / totalQuestions) * 100) : 0
   const topTypes = getTopTypes(scores)
 
   function resetExperience() {
     setScreen('intro')
+    setQuizQuestions([])
     setQuestionIndex(0)
     setScores(cloneMap(EMPTY_SCORES))
     setFlags(cloneMap(EMPTY_FLAGS))
@@ -151,14 +166,16 @@ function App() {
   }
 
   function startQuiz() {
+    const next = freshQuizState()
     setScreen('quiz')
-    setQuestionIndex(0)
-    setScores(cloneMap(EMPTY_SCORES))
-    setFlags(cloneMap(EMPTY_FLAGS))
-    setPickedOptions({})
-    setCurrentTaunt(null)
-    setResult(null)
-    setCopied(false)
+    setQuizQuestions(next.quizQuestions)
+    setQuestionIndex(next.questionIndex)
+    setScores(next.scores)
+    setFlags(next.flags)
+    setPickedOptions(next.pickedOptions)
+    setCurrentTaunt(next.currentTaunt)
+    setResult(next.result)
+    setCopied(next.copied)
   }
 
   function handleOptionSelect(option) {
@@ -222,22 +239,22 @@ function App() {
         <section className="intro-screen">
           <div className="intro-card">
             <p className="eyebrow">提瓦特电子审判处</p>
-            <h1>这不是人格测试，这是原神玩家公开处刑器。</h1>
+            <h1>这版不再连着催眠你，而是随机抽题来抓你现行。</h1>
             <p className="intro-lead">
-              这版不再温柔分析你，而是专门抓你在树脂、抽卡、深渊、剧情、地图和社区发言里的真实嘴脸。测出来不是“你像什么”，是“你到底丢人在哪儿”。
+              我把原来那种同类题扎堆的问法拆掉了。现在每次会从大题库里抽 24 题，按不同主题交错出题，尽量让你每几题就换一个脑回路，不再像在做流水线问卷。
             </p>
 
             <div className="intro-grid">
               <article className="mini-panel">
-                <strong>这版改了什么</strong>
+                <strong>这次重点修什么</strong>
                 <p>
-                  题目整体换成了更像中文原神社区真会说出口的话，减少直给自报家门，增加嘴硬、反差、旧伤和自我打脸，尽量让系统像在现场抓包。
+                  不是只修文案，而是直接修结构。上一版最大的问题是题目彼此太近，像在用不同说法问同一件事，玩家答到后面会疲劳，甚至会提前看穿结果。
                 </p>
               </article>
               <article className="mini-panel">
-                <strong>为什么更适合传播</strong>
+                <strong>现在怎么玩</strong>
                 <p>
-                  认同感不够，玩家就只会点头；羞耻感和惊讶感不够，玩家就不会截图。这一版的目标不是“准”，而是“准到你想立刻发给朋友骂系统懂太多”。
+                  每次随机抽 24 题，中途只插嘴 2 次。题目改成情境、口癖、旧伤、评论区发言和联机事故，不再连续追问同一个维度。
                 </p>
               </article>
             </div>
@@ -246,17 +263,17 @@ function App() {
               <button type="button" className="primary-btn" onClick={startQuiz}>
                 开始接受审问
               </button>
-              <span className="subtle-note">36 题，系统中途只插嘴 2 次，但每次都尽量往痛处戳</span>
+              <span className="subtle-note">24 题随机版，节奏更快，但下嘴更损</span>
             </div>
           </div>
         </section>
       )}
 
-      {screen === 'quiz' && (
+      {screen === 'quiz' && activeQuestion && (
         <section className="quiz-screen">
           <header className="topbar">
             <div>
-              <p className="eyebrow">RBTI 内测版</p>
+              <p className="eyebrow">RBTI 随机审问版</p>
               <h2>{activeQuestion.section}</h2>
             </div>
             <div className="progress-meta">
@@ -292,7 +309,7 @@ function App() {
           </article>
 
           <footer className="quiz-footer">
-            <p>系统提醒：你每点一次选项，都在给结果页补充新的作案细节。</p>
+            <p>系统提醒：现在这版不会连着盘问同一类病，但后台会把你的病统一记账。</p>
             <button type="button" className="ghost-btn" onClick={resetExperience}>
               先不测了，我想逃
             </button>
@@ -362,15 +379,15 @@ function App() {
 
           <div className="result-grid">
             <article className="result-card">
-              <h3>为什么上版不够爆</h3>
+              <h3>为什么这版更不容易犯困</h3>
               <p>
-                因为它更像“分类正确”而不是“抓包成功”。玩家认同不等于玩家惊讶，惊讶不够，就不会截图；羞耻感不够，也不会主动发给熟人让大家一起笑。
+                因为它不再连续问同一件事。固定长问卷最容易把人问困，尤其当玩家第三次意识到“这题还是在问我是不是卡池上头”时，传播冲动就已经掉了。
               </p>
             </article>
             <article className="result-card">
-              <h3>这版瞄准的传播点</h3>
+              <h3>这版还在赌什么</h3>
               <p>
-                题目尽量不让人轻松自报家门，而是通过嘴硬、反差、旧伤和社区黑话把人一步步逼出原形。最理想的效果不是“有点准”，而是“这网页怎么把我偷偷观察过”。
+                现在赌的是“每几题就换一种抓包方式”，让玩家没那么容易预测结果，也更容易在中途被某一题突然扎到，从而产生截图欲望。
               </p>
             </article>
           </div>
