@@ -203,23 +203,8 @@ const FLAG_TAUNTS = {
   ],
 }
 
-const SECTION_ORDER = ['daily', 'gacha', 'abyss', 'map', 'story', 'social']
-
 function pickByStage(list, stage) {
   return list[Math.min(stage, list.length - 1)]
-}
-
-function shuffle(array) {
-  const cloned = [...array]
-  for (let i = cloned.length - 1; i > 0; i -= 1) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[cloned[i], cloned[j]] = [cloned[j], cloned[i]]
-  }
-  return cloned
-}
-
-function sample(array, count) {
-  return shuffle(array).slice(0, count)
 }
 
 export function getDynamicTaunt(stage, topType, flags) {
@@ -230,463 +215,280 @@ export function getDynamicTaunt(stage, topType, flags) {
   return pickByStage(TYPE_TAUNTS[topType] || TYPE_TAUNTS.DAIL, stage)
 }
 
-const QUESTION_BANK = {
-  daily: [
-    {
-      id: 'daily-1',
-      section: '上线 / 树脂 / 条件反射',
-      prompt: '你说“我就上号看一眼”的时候，通常先点哪？',
-      hint: '这题看的是手比脑子快的时候。',
-      options: [
-        { label: '树脂，先看看是不是快满了', scores: { FARM: 2, DAIL: 1 } },
-        { label: '活动页，怕奖励忘领', scores: { DAIL: 2, SAVE: 1 } },
-        { label: '祈愿入口，我就进去看看', scores: { PULL: 2 } },
-        { label: '哪也不点，先站着发会儿呆', scores: { CHAO: 1 }, flags: { RESI: 1 } },
-      ],
-    },
-    {
-      id: 'daily-2',
-      section: '上线 / 树脂 / 条件反射',
-      prompt: '朋友问你“你怎么又上线了”，你最像哪种情况？',
-      hint: '这题看你到底是自律还是放不下。',
-      options: [
-        { label: '树脂快满了，上来清一下', scores: { FARM: 2 } },
-        { label: '我每天差不多这点就会自动登录', scores: { DAIL: 2 } },
-        { label: '卡池在那儿，我忍不住点开看看', scores: { PULL: 2 } },
-        { label: '我也不知道，就是突然想上来看看', scores: { CHAO: 1 }, flags: { RESI: 2 } },
-      ],
-    },
-    {
-      id: 'daily-3',
-      section: '上线 / 树脂 / 条件反射',
-      prompt: '最像你账号的一句损话是哪句？',
-      hint: '不一定好听，但一般八九不离十。',
-      options: [
-        { label: '这号挺勤快的，像每天都要打卡', scores: { FARM: 2, DAIL: 1 } },
-        { label: '这号一看就是老爱抽卡', scores: { PULL: 2 } },
-        { label: '这号很稳定，像长期养着的', scores: { DAIL: 2, SAVE: 1 } },
-        { label: '这号想到才玩，不想到就算了', scores: { CHAO: 1 }, flags: { RESI: 2 } },
-      ],
-    },
-    {
-      id: 'daily-4',
-      section: '上线 / 树脂 / 条件反射',
-      prompt: '你最像哪种“今天真的不想玩”？',
-      hint: '有的人嘴上不想，身体很诚实。',
-      options: [
-        { label: '不想玩，但想到树脂会满还是爬回去', scores: { FARM: 2 } },
-        { label: '不想玩，但今日份流程还是会做完', scores: { DAIL: 2 } },
-        { label: '不想玩，但如果有人说要抽卡我就醒了', scores: { PULL: 2 } },
-        { label: '不想玩就是不想玩，今天谁叫都没用', flags: { RESI: 2 } },
-      ],
-    },
-    {
-      id: 'daily-5',
-      section: '上线 / 树脂 / 条件反射',
-      prompt: '你最常见的上线废话是哪句？',
-      hint: '基本都是大家听过你说的。',
-      options: [
-        { label: '等我清个体，很快', scores: { FARM: 2 } },
-        { label: '我先把委托顺手做了', scores: { DAIL: 2 } },
-        { label: '我就看一眼卡池，不会抽的', scores: { PULL: 2 }, flags: { QIQI: 1 } },
-        { label: '你先别催，我先自己看看', scores: { CHAO: 2 }, flags: { PAIM: 1 } },
-      ],
-    },
-    {
-      id: 'daily-6',
-      section: '上线 / 树脂 / 条件反射',
-      prompt: '树脂 159 的时候，你最像哪种反应？',
-      hint: '这一题很容易暴露你急不急。',
-      options: [
-        { label: '有点难受，得想办法清掉', scores: { FARM: 2 } },
-        { label: '先算时间差，看看能不能安全回家', scores: { SAVE: 2 } },
-        { label: '嘴上说无所谓，其实已经开始惦记', scores: { FARM: 1, MAPR: 1 } },
-        { label: '爆就爆吧，也不是第一次了', scores: { CHAO: 1 }, flags: { RESI: 2 } },
-      ],
-    },
-  ],
-  gacha: [
-    {
-      id: 'gacha-1',
-      section: '卡池 / 原石 / 旧伤',
-      prompt: '新角色立绘刚发出来，你第一反应最像哪种？',
-      hint: '想太久就不准了。',
-      options: [
-        { label: '先看脸，别的之后再说', scores: { XPRS: 2 } },
-        { label: '先看机制和配队', scores: { SAVE: 1, ABYS: 1 } },
-        { label: '先说不抽，给自己留点余地', scores: { PULL: 2, SAVE: 1 } },
-        { label: '先去评论区看大家怎么吵', scores: { CHAO: 2 } },
-      ],
-    },
-    {
-      id: 'gacha-2',
-      section: '卡池 / 原石 / 旧伤',
-      prompt: '最像你卡池前会说的话是哪句？',
-      hint: '这题主要抓嘴硬。',
-      options: [
-        { label: '0 命能玩，我先垫两发看看', scores: { PULL: 2 }, flags: { QIQI: 1 } },
-        { label: '我还要看下半，不急着死', scores: { SAVE: 2 } },
-        { label: '我就喜欢，别跟我讲那么多', scores: { XPRS: 2 } },
-        { label: '我先看别人抽成什么样', scores: { CHAO: 1, PULL: 1 }, flags: { QIQI: 1 } },
-      ],
-    },
-    {
-      id: 'gacha-3',
-      section: '卡池 / 原石 / 旧伤',
-      prompt: '哪种画面最容易让你一下子不想说话？',
-      hint: '旧伤很容易在这里露出来。',
-      options: [
-        { label: '彩光一闪，结果还是歪了常驻', flags: { QIQI: 2 }, scores: { PULL: 1 } },
-        { label: '专武池又歪了，我人直接沉默', flags: { QIQI: 1, OTTO: 1 }, scores: { PULL: 1 } },
-        { label: '卡池结束前原石刚好差十抽', scores: { SAVE: 2 } },
-        { label: '我明知道不值，还是手贱点下去了', scores: { XPRS: 1, PULL: 1 } },
-      ],
-    },
-    {
-      id: 'gacha-4',
-      section: '卡池 / 原石 / 旧伤',
-      prompt: '朋友劝你“别抽了”，你更像哪种反应？',
-      hint: '这题看你还剩多少理智。',
-      options: [
-        { label: '你别管，我就是喜欢', scores: { XPRS: 2 } },
-        { label: '我会嘴上说嗯嗯，手上继续点', scores: { PULL: 2 } },
-        { label: '我会先算一下，看看还能不能抽', scores: { SAVE: 2 } },
-        { label: '我先去看看别人怎么说', scores: { CHAO: 2 } },
-      ],
-    },
-    {
-      id: 'gacha-5',
-      section: '卡池 / 原石 / 旧伤',
-      prompt: '最像你原石观的一句话是？',
-      hint: '每个人对原石都有自己的想法。',
-      options: [
-        { label: '原石不是货币，是安全感', scores: { SAVE: 2 } },
-        { label: '原石攒着没意思，早晚都得抽', scores: { PULL: 2 } },
-        { label: '原石最后还是会花在喜欢的角色上', scores: { XPRS: 2 } },
-        { label: '原石有时候就是拿来看乐子的', scores: { CHAO: 2 } },
-      ],
-    },
-    {
-      id: 'gacha-6',
-      section: '卡池 / 原石 / 旧伤',
-      prompt: '你抽完卡最常见的后续动作是？',
-      hint: '出结果之后最容易暴露本性。',
-      options: [
-        { label: '先截图，再假装自己一直都很淡定', scores: { PULL: 2, SNAP: 1 } },
-        { label: '先盘账，看看未来几周怎么过苦日子', scores: { SAVE: 2 } },
-        { label: '先盯着角色傻乐，别的都不重要', scores: { XPRS: 2 } },
-        { label: '先去看看别人抽得怎么样', scores: { CHAO: 2 }, flags: { QIQI: 1 } },
-      ],
-    },
-  ],
-  abyss: [
-    {
-      id: 'abyss-1',
-      section: '深渊 / 养成 / 工伤',
-      prompt: '你打深渊最像在和什么较劲？',
-      hint: '有的人是打怪，有的人是跟自己过不去。',
-      options: [
-        { label: '和那颗死活补不回来的星较劲', scores: { ABYS: 2 } },
-        { label: '和那套死活不毕业的圣遗物较劲', scores: { ABYS: 1 }, flags: { OTTO: 2 } },
-        { label: '和社区作业较劲，我不想全抄', scores: { ABYS: 1, CHAO: 1 } },
-        { label: '和自己的上线动力较劲，我本来就不太想打', scores: { DAIL: 1 }, flags: { RESI: 1 } },
-      ],
-    },
-    {
-      id: 'abyss-2',
-      section: '深渊 / 养成 / 工伤',
-      prompt: '群里发了“低配满星”，你最像哪种反应？',
-      hint: '这题不看强度，只看你会不会上头。',
-      options: [
-        { label: '先抄，先过了再说', scores: { ABYS: 1, COOP: 1 } },
-        { label: '先研究逻辑，再自己试一遍', scores: { ABYS: 2 } },
-        { label: '看完更焦虑，还不如当没看见', scores: { ABYS: 1 }, flags: { OTTO: 1 } },
-        { label: '我反手掏个怪阵容进去试毒', scores: { CHAO: 2 } },
-      ],
-    },
-    {
-      id: 'abyss-3',
-      section: '深渊 / 养成 / 工伤',
-      prompt: '双爆胚子掉出来那一秒，你最像哪种反应？',
-      hint: '这题一般能测出工伤程度。',
-      options: [
-        { label: '先别高兴，等 +20 再说', scores: { ABYS: 1 }, flags: { OTTO: 2 } },
-        { label: '先截一下，万一这是它最后的体面', scores: { SNAP: 1 }, flags: { OTTO: 1 } },
-        { label: '我已经不信双爆能有好下场了', flags: { OTTO: 2 } },
-        { label: '它敢歪防，我今天心态直接没了', scores: { CHAO: 1 }, flags: { OTTO: 2 } },
-      ],
-    },
-    {
-      id: 'abyss-4',
-      section: '深渊 / 养成 / 工伤',
-      prompt: '哪句话最容易让你有点破防？',
-      hint: '这题基本都戳过不少人。',
-      options: [
-        { label: '你这练度也就那样吧', scores: { ABYS: 2 } },
-        { label: '你怎么抽了这么多看着没啥用的角色', scores: { XPRS: 1, PULL: 1 } },
-        { label: '这都还没毕业？', scores: { ABYS: 1 }, flags: { OTTO: 1 } },
-        { label: '你这号看着挺佛的', scores: { DAIL: 1, FARM: 1 } },
-      ],
-    },
-    {
-      id: 'abyss-5',
-      section: '深渊 / 养成 / 工伤',
-      prompt: '最像你养成工伤的一句话是？',
-      hint: '这一题通常很扎心。',
-      options: [
-        { label: '双爆老歪防，我已经看开了', scores: { ABYS: 1 }, flags: { OTTO: 2 } },
-        { label: '能用就行，我不想再刷了', scores: { DAIL: 1, SAVE: 1 } },
-        { label: '我总觉得下一件就该轮到我了', scores: { PULL: 1, ABYS: 1 } },
-        { label: '毕业不毕业的先放一边，先活着', scores: { CHAO: 1 }, flags: { OTTO: 1 } },
-      ],
-    },
-    {
-      id: 'abyss-6',
-      section: '深渊 / 养成 / 工伤',
-      prompt: '“少一星也就少几十原石”这句话对你来说像什么？',
-      hint: '这句话很看人。',
-      options: [
-        { label: '像废话，重点根本不是原石', scores: { ABYS: 2 } },
-        { label: '像安慰剂，听完还是堵得慌', scores: { ABYS: 1, DAIL: 1 } },
-        { label: '像我安慰自己时也说过的话', scores: { ABYS: 1, CHAO: 1 } },
-        { label: '像别人站着说话不腰疼', scores: { ABYS: 2 } },
-      ],
-    },
-  ],
-  map: [
-    {
-      id: 'map-1',
-      section: '大世界 / 地图 / 执念',
-      prompt: '新地图一开，你一般先干嘛？',
-      hint: '开图习惯很能暴露人。',
-      options: [
-        { label: '锚点、神瞳、宝箱，先把能拿的都拿了', scores: { MAPR: 2 } },
-        { label: '先乱逛，风景顺眼比效率重要', scores: { SNAP: 1, POTR: 1 } },
-        { label: '先推主线，不知道发生了什么会难受', scores: { LORE: 2 } },
-        { label: '先看攻略，免得自己乱跑', scores: { SAVE: 1, MAPR: 1 } },
-      ],
-    },
-    {
-      id: 'map-2',
-      section: '大世界 / 地图 / 执念',
-      prompt: '地图卡在 99% 时，你最像哪种反应？',
-      hint: '这题很容易测出你急不急。',
-      options: [
-        { label: '今晚必须找出来，不然不舒服', scores: { MAPR: 2 } },
-        { label: '嘴上说算了，晚上还是会去查攻略', scores: { MAPR: 1, DAIL: 1 } },
-        { label: '算了，差一点也不是不能活', scores: { SNAP: 1 }, flags: { RESI: 1 } },
-        { label: '我会去问朋友，然后越问越急', scores: { COOP: 1, MAPR: 1 } },
-      ],
-    },
-    {
-      id: 'map-3',
-      section: '大世界 / 地图 / 执念',
-      prompt: '你在提瓦特瞎逛的时候，通常是在干嘛？',
-      hint: '同样是乱逛，重点差很多。',
-      options: [
-        { label: '翻文本和细节，看有没有漏掉的设定', scores: { LORE: 2 } },
-        { label: '见到亮的就想顺手拿了', scores: { MAPR: 2 } },
-        { label: '看看哪儿适合拍照', scores: { SNAP: 2 } },
-        { label: '顺手捡材料，来都来了', scores: { FARM: 1, MAPR: 1 } },
-      ],
-    },
-    {
-      id: 'map-4',
-      section: '大世界 / 地图 / 执念',
-      prompt: '哪个场景最容易让你一下子上头？',
-      hint: '这题看你的触发点在哪。',
-      options: [
-        { label: '别人全图了，我还卡 99', scores: { MAPR: 2 } },
-        { label: '别人把设定说歪了还很自信', scores: { LORE: 2 } },
-        { label: '别人拍出神图，我还没找到机位', scores: { SNAP: 2 } },
-        { label: '别人说“随便啦”，我听着就有点难受', scores: { FARM: 1, MAPR: 1 } },
-      ],
-    },
-    {
-      id: 'map-5',
-      section: '大世界 / 地图 / 执念',
-      prompt: '最像你地图观的一句话是？',
-      hint: '这题一般都挺真实。',
-      options: [
-        { label: '100% 不是目标，是心理治疗', scores: { MAPR: 2 } },
-        { label: '开图只是顺便，我主要是来看风景', scores: { SNAP: 2 } },
-        { label: '我其实只是来捡材料，其他都是顺手', scores: { FARM: 2 } },
-        { label: '地图总有一天会开，但今天先算了', scores: { DAIL: 1 }, flags: { RESI: 1 } },
-      ],
-    },
-    {
-      id: 'map-6',
-      section: '大世界 / 地图 / 执念',
-      prompt: '你最像哪种“我探索完了”？',
-      hint: '同一句话，意思差挺多。',
-      options: [
-        { label: '全清了，我终于能像个人一样呼吸', scores: { MAPR: 2 } },
-        { label: '剧情和风景都差不多了，可以收工了', scores: { LORE: 1, SNAP: 1 } },
-        { label: '奖励拿得差不多就行，够了', scores: { DAIL: 1, SAVE: 1 } },
-        { label: '我说完了，但后台知道我根本没完', scores: { CHAO: 1, MAPR: 1 } },
-      ],
-    },
-  ],
-  story: [
-    {
-      id: 'story-1',
-      section: '剧情 / 设定 / 口舌',
-      prompt: '你看剧情时最像哪种状态？',
-      hint: '这题其实挺好分人的。',
-      options: [
-        { label: '字幕漏一个字我都会回放', scores: { LORE: 2 } },
-        { label: '主线认真看，支线看当天精神状态', scores: { LORE: 1, DAIL: 1 } },
-        { label: '边看边猜编剧这次又要埋什么雷', scores: { LORE: 1, CHAO: 1 } },
-        { label: '我能跳就跳，后面再看别人总结', scores: { SAVE: 1 }, flags: { RESI: 1 } },
-      ],
-    },
-    {
-      id: 'story-2',
-      section: '剧情 / 设定 / 口舌',
-      prompt: '如果官方真把剧情跳过做出来，你最真实的反应是？',
-      hint: '这题最好说实话。',
-      options: [
-        { label: '给就给，反正我自己不会跳', scores: { LORE: 2 } },
-        { label: '早该给了，我不是每段都想认真看', scores: { DAIL: 2 } },
-        { label: '跳可以，但跳完别来硬聊设定', scores: { LORE: 1, CHAO: 1 } },
-        { label: '我现在就想要，我很多时候真懒得看', scores: { CHAO: 1 }, flags: { RESI: 1 } },
-      ],
-    },
-    {
-      id: 'story-3',
-      section: '剧情 / 设定 / 口舌',
-      prompt: '朋友跳完剧情还来跟你聊设定，你最像哪种反应？',
-      hint: '这题纯测血压。',
-      options: [
-        { label: '先忍，忍不住就开始纠正', scores: { LORE: 2 } },
-        { label: '我会直接开麦，不然憋得慌', scores: { LORE: 1, CHAO: 1 } },
-        { label: '算了，他聊他的，我听我的', scores: { DAIL: 1 } },
-        { label: '我会甩长文链接过去', scores: { LORE: 2, COOP: 1 } },
-      ],
-    },
-    {
-      id: 'story-4',
-      section: '剧情 / 设定 / 口舌',
-      prompt: '下面哪句最像你在社区会发的评论？',
-      hint: '主要看你平时说话什么味。',
-      options: [
-        { label: '你剧情都没看全，先别急着下定义', scores: { LORE: 2 } },
-        { label: '版本会过去，XP 永远不会退环境', scores: { XPRS: 2 } },
-        { label: '0 命能玩，0+1 更舒服', scores: { PULL: 1, ABYS: 1 } },
-        { label: '我不评价剧情，我只评价节目效果', scores: { CHAO: 2 } },
-      ],
-    },
-    {
-      id: 'story-5',
-      section: '剧情 / 设定 / 口舌',
-      prompt: '你最像哪种“我不是剧情党”？',
-      hint: '很多人嘴上都会这么说。',
-      options: [
-        { label: '我不是剧情党，我只是讨厌别人瞎讲', scores: { LORE: 2 } },
-        { label: '我不是剧情党，我只是主线全看', scores: { LORE: 1, DAIL: 1 } },
-        { label: '我不是剧情党，我只爱看冲突和乐子', scores: { CHAO: 2 } },
-        { label: '我真不是，我多数时候直接跳', scores: { DAIL: 1 }, flags: { RESI: 1 } },
-      ],
-    },
-    {
-      id: 'story-6',
-      section: '剧情 / 设定 / 口舌',
-      prompt: '看完剧情后，你最容易做的第一件事是什么？',
-      hint: '看完以后最容易看出人是什么路数。',
-      options: [
-        { label: '回头翻文本、物件、支线补细节', scores: { LORE: 2 } },
-        { label: '去看社区有没有人聊歪，好让我上去纠正', scores: { LORE: 1, CHAO: 1 } },
-        { label: '给角色拍两张有情绪的图', scores: { SNAP: 1, XPRS: 1 } },
-        { label: '划走，下一位', scores: { DAIL: 1 }, flags: { RESI: 1 } },
-      ],
-    },
-  ],
-  social: [
-    {
-      id: 'social-1',
-      section: '联机 / 社区 / 人情事故',
-      prompt: '有人申请进你世界时，你第一反应通常是什么？',
-      hint: '这题看你的默认设置。',
-      options: [
-        { label: '大概率是来求助的，放进来吧', scores: { COOP: 2 } },
-        { label: '先放进来，我看看他要干嘛', scores: { COOP: 1, DAIL: 1 } },
-        { label: '不太想，我喜欢自己一个人待着', scores: { SAVE: 1, LORE: 1 } },
-        { label: '进可以，别乱啃我材料', scores: { FARM: 1, MAPR: 1 } },
-      ],
-    },
-    {
-      id: 'social-2',
-      section: '联机 / 社区 / 人情事故',
-      prompt: '你在联机里最像哪种角色？',
-      hint: '这题主要分工种。',
-      options: [
-        { label: '帮人收拾烂摊子的', scores: { COOP: 2 } },
-        { label: '走到哪整活到哪的', scores: { CHAO: 2 } },
-        { label: '负责拍照和指挥站位的', scores: { SNAP: 2, COOP: 1 } },
-        { label: '基本不联机的', scores: { SAVE: 1, POTR: 1 } },
-      ],
-    },
-    {
-      id: 'social-3',
-      section: '联机 / 社区 / 人情事故',
-      prompt: '你对尘歌壶最真实的态度是？',
-      hint: '这题对壶玩家挺明显。',
-      options: [
-        { label: '那不是壶，那是我的地产项目', scores: { POTR: 2 } },
-        { label: '奖励拿了就行，我懒得慢慢摆', scores: { DAIL: 1 } },
-        { label: '每次都想认真搞，结果搞两下就算了', scores: { POTR: 1 }, flags: { RESI: 1 } },
-        { label: '我会认真摆，因为我想让别人夸', scores: { POTR: 1, SNAP: 1 } },
-      ],
-    },
-    {
-      id: 'social-4',
-      section: '联机 / 社区 / 人情事故',
-      prompt: '朋友夸你“玩原神还挺会生活”，最可能是在夸什么？',
-      hint: '这题其实很好分类型。',
-      options: [
-        { label: '壶搭得很舒服，看着就想住进去', scores: { POTR: 2 } },
-        { label: '截图像官图二创流出', scores: { SNAP: 2 } },
-        { label: '带人时很有耐心', scores: { COOP: 2 } },
-        { label: '你不发疯的时候还挺正常', scores: { DAIL: 1, CHAO: 1 } },
-      ],
-    },
-    {
-      id: 'social-5',
-      section: '联机 / 社区 / 人情事故',
-      prompt: '你最容易在什么时刻突然变得很能说？',
-      hint: '每个人触发条件都不一样。',
-      options: [
-        { label: '别人打不过的时候', scores: { COOP: 2 } },
-        { label: '别人说要拍照的时候', scores: { SNAP: 1, COOP: 1 } },
-        { label: '别人把剧情聊歪的时候', scores: { LORE: 2 } },
-        { label: '别人开始整活的时候', scores: { CHAO: 2 } },
-      ],
-    },
-    {
-      id: 'social-6',
-      section: '联机 / 社区 / 人情事故',
-      prompt: '如果结果页只允许你带走一句最适合发群的话，你选哪句？',
-      hint: '这题同时在测你的人设和传播性。',
-      options: [
-        { label: '我是那种树脂一满就会心悸的人', scores: { FARM: 2 } },
-        { label: '我是那种嘴上说不抽，身体先开卡池的人', scores: { PULL: 2 } },
-        { label: '我是那种看见 99% 会怀疑人生的人', scores: { MAPR: 2 } },
-        { label: '我是那种正常玩法玩一会儿就想开始发癫的人', scores: { CHAO: 2 }, flags: { PAIM: 1 } },
-      ],
-    },
-  ],
-}
+const QUESTIONS = [
+  {
+    id: 'q1',
+    section: '日常 / 树脂',
+    prompt: '刚上线，你第一眼一般看哪？',
+    hint: '三选一，别想太久。',
+    options: [
+      { label: '树脂和委托', scores: { FARM: 2, DAIL: 1 } },
+      { label: '活动和邮件', scores: { DAIL: 1, SAVE: 1 } },
+      { label: '随便点，想到哪看哪', scores: { CHAO: 1 }, flags: { RESI: 1 } },
+    ],
+  },
+  {
+    id: 'q2',
+    section: '日常 / 树脂',
+    prompt: '树脂快满了，你更像哪种人？',
+    hint: '这一题很容易露馅。',
+    options: [
+      { label: '会惦记，最好上去清一下', scores: { FARM: 2 } },
+      { label: '看情况，晚点处理也行', scores: { SAVE: 1, DAIL: 1 } },
+      { label: '经常满了才想起来', flags: { RESI: 2 } },
+    ],
+  },
+  {
+    id: 'q3',
+    section: '日常 / 树脂',
+    prompt: '你最常说的一句原神废话是？',
+    hint: '群友一般都听过。',
+    options: [
+      { label: '等我清个体', scores: { FARM: 2 } },
+      { label: '我先做个委托', scores: { DAIL: 2 } },
+      { label: '我就看一眼，不会太久', scores: { CHAO: 1 }, flags: { RESI: 1 } },
+    ],
+  },
+  {
+    id: 'q4',
+    section: '日常 / 树脂',
+    prompt: '“今天不想玩”时，你一般是哪种情况？',
+    hint: '嘴上和身体不一定一致。',
+    options: [
+      { label: '不想玩，但还是会上去清体', scores: { FARM: 2 } },
+      { label: '不想玩，但日常会做掉', scores: { DAIL: 2 } },
+      { label: '不想玩就真不上', flags: { RESI: 2 } },
+    ],
+  },
+  {
+    id: 'q5',
+    section: '卡池 / 原石',
+    prompt: '新角色 PV 一出，你第一反应通常是？',
+    hint: '选最像你的。',
+    options: [
+      { label: '先看机制和配队', scores: { ABYS: 1, SAVE: 1 } },
+      { label: '先看脸，喜不喜欢最重要', scores: { XPRS: 2 } },
+      { label: '先去看评论区吵成什么样', scores: { CHAO: 2 } },
+    ],
+  },
+  {
+    id: 'q6',
+    section: '卡池 / 原石',
+    prompt: '卡池开之前，你更像哪种人？',
+    hint: '主要抓嘴硬。',
+    options: [
+      { label: '先算原石够不够', scores: { SAVE: 2 } },
+      { label: '想抽就抽，后面再说', scores: { PULL: 2, XPRS: 1 } },
+      { label: '先等等，看别人抽得怎么样', scores: { CHAO: 1, SAVE: 1 } },
+    ],
+  },
+  {
+    id: 'q7',
+    section: '卡池 / 原石',
+    prompt: '歪常驻那一刻，你最像哪种反应？',
+    hint: '旧伤一般都在这。',
+    options: [
+      { label: '先算还能不能救', scores: { SAVE: 2 }, flags: { QIQI: 1 } },
+      { label: '先骂两句，然后继续攒', scores: { PULL: 2 }, flags: { QIQI: 1 } },
+      { label: '先发群里，再说别的', scores: { CHAO: 1 }, flags: { QIQI: 1, PAIM: 1 } },
+    ],
+  },
+  {
+    id: 'q8',
+    section: '卡池 / 原石',
+    prompt: '朋友说“这个角色一般”，你更像哪种反应？',
+    hint: '这题很分人。',
+    options: [
+      { label: '那我再看看，别冲动', scores: { SAVE: 1, ABYS: 1 } },
+      { label: '我喜欢就行', scores: { XPRS: 2 } },
+      { label: '先看评论区风向', scores: { CHAO: 1, PULL: 1 } },
+    ],
+  },
+  {
+    id: 'q9',
+    section: '深渊 / 养成',
+    prompt: '深渊少一星，对你来说更像什么？',
+    hint: '别选体面答案。',
+    options: [
+      { label: '得补回来，不然难受', scores: { ABYS: 2 } },
+      { label: '差不多就行，先拿奖励', scores: { DAIL: 1, SAVE: 1 } },
+      { label: '看心情，有时候懒得补', scores: { CHAO: 1 }, flags: { RESI: 1 } },
+    ],
+  },
+  {
+    id: 'q10',
+    section: '深渊 / 养成',
+    prompt: '双爆胚子掉出来时，你最像哪种反应？',
+    hint: '工伤在这里暴露得很快。',
+    options: [
+      { label: '先别高兴，等 +20 再说', scores: { ABYS: 1 }, flags: { OTTO: 2 } },
+      { label: '能用就行，别想太多', scores: { DAIL: 1, SAVE: 1 } },
+      { label: '我已经不信这种东西了', scores: { CHAO: 1 }, flags: { OTTO: 2 } },
+    ],
+  },
+  {
+    id: 'q11',
+    section: '深渊 / 养成',
+    prompt: '群里发低配满星，你一般会？',
+    hint: '作业党和轴佬很好分。',
+    options: [
+      { label: '先抄，过了再说', scores: { ABYS: 2 } },
+      { label: '先存着，回头再看', scores: { SAVE: 2 } },
+      { label: '懒得看，我自己来', scores: { CHAO: 1, XPRS: 1 } },
+    ],
+  },
+  {
+    id: 'q12',
+    section: '深渊 / 养成',
+    prompt: '哪句话最容易让你有点破防？',
+    hint: '一般都被说过。',
+    options: [
+      { label: '你这练度一般啊', scores: { ABYS: 2 } },
+      { label: '你怎么抽了这么多没啥用的角色', scores: { XPRS: 1, PULL: 1 } },
+      { label: '你这号看着挺佛的', scores: { DAIL: 1, FARM: 1 } },
+    ],
+  },
+  {
+    id: 'q13',
+    section: '地图 / 探索',
+    prompt: '新地图一开，你一般先干嘛？',
+    hint: '这题其实很直白。',
+    options: [
+      { label: '先开锚点找神瞳', scores: { MAPR: 2 } },
+      { label: '先乱逛，看看风景', scores: { SNAP: 2 } },
+      { label: '先推主线，看剧情', scores: { LORE: 2 } },
+    ],
+  },
+  {
+    id: 'q14',
+    section: '地图 / 探索',
+    prompt: '地图卡在 99% 时，你更像哪种人？',
+    hint: '别装不在乎。',
+    options: [
+      { label: '不找到最后那点睡不着', scores: { MAPR: 2 } },
+      { label: '嘴上算了，晚上还是会查攻略', scores: { MAPR: 1, SAVE: 1 } },
+      { label: '99 就 99 吧，也不是不能活', scores: { SNAP: 1 }, flags: { RESI: 1 } },
+    ],
+  },
+  {
+    id: 'q15',
+    section: '地图 / 探索',
+    prompt: '你在大世界乱逛时，通常更像在干嘛？',
+    hint: '重点不一样，味也不一样。',
+    options: [
+      { label: '翻箱倒柜，不想漏东西', scores: { MAPR: 2, FARM: 1 } },
+      { label: '拍照踩点，看哪里好看', scores: { SNAP: 2 } },
+      { label: '看文本、看细节、看设定', scores: { LORE: 2 } },
+    ],
+  },
+  {
+    id: 'q16',
+    section: '地图 / 探索',
+    prompt: '朋友说自己全图了，你最像哪种反应？',
+    hint: '心态很容易暴露。',
+    options: [
+      { label: '有点羡慕，我也想赶紧清完', scores: { MAPR: 2 } },
+      { label: '挺好，我慢慢来也行', scores: { DAIL: 1 } },
+      { label: '无所谓，我本来也不冲这个', scores: { CHAO: 1 }, flags: { RESI: 1 } },
+    ],
+  },
+  {
+    id: 'q17',
+    section: '剧情 / 设定',
+    prompt: '你看剧情时，一般是哪种状态？',
+    hint: '这题也挺直白。',
+    options: [
+      { label: '认真看，漏一句都难受', scores: { LORE: 2 } },
+      { label: '主线看，支线看心情', scores: { LORE: 1, DAIL: 1 } },
+      { label: '能跳就跳，后面再说', scores: { CHAO: 1 }, flags: { RESI: 1 } },
+    ],
+  },
+  {
+    id: 'q18',
+    section: '剧情 / 设定',
+    prompt: '如果真给剧情跳过，你最真实的态度是？',
+    hint: '说实话就行。',
+    options: [
+      { label: '给就给，反正我自己不会跳', scores: { LORE: 2 } },
+      { label: '有最好，省得有些地方磨人', scores: { DAIL: 1, SAVE: 1 } },
+      { label: '赶紧给，我很多时候真懒得看', scores: { CHAO: 1 }, flags: { RESI: 1 } },
+    ],
+  },
+  {
+    id: 'q19',
+    section: '剧情 / 设定',
+    prompt: '朋友跳完剧情还来聊设定，你最像哪种反应？',
+    hint: '血压题。',
+    options: [
+      { label: '忍不住想纠正', scores: { LORE: 2 } },
+      { label: '听听就算了', scores: { DAIL: 1 } },
+      { label: '直接开始整活', scores: { CHAO: 2 } },
+    ],
+  },
+  {
+    id: 'q20',
+    section: '剧情 / 设定',
+    prompt: '下面哪句更像你会在社区发的？',
+    hint: '看说话的味。',
+    options: [
+      { label: '你剧情都没看全，先别急着聊设定', scores: { LORE: 2 } },
+      { label: '版本会过去，XP 永远不会退环境', scores: { XPRS: 2 } },
+      { label: '我不评价，我先看会儿乐子', scores: { CHAO: 2 } },
+    ],
+  },
+  {
+    id: 'q21',
+    section: '联机 / 壶 / 社交',
+    prompt: '有人申请进你世界，你一般是什么反应？',
+    hint: '默认设置很能说明问题。',
+    options: [
+      { label: '大概率是来求助的，放进来吧', scores: { COOP: 2 } },
+      { label: '看情况，我先观察一下', scores: { COOP: 1, DAIL: 1 } },
+      { label: '不太想，我更喜欢自己待着', scores: { SAVE: 1, POTR: 1 } },
+    ],
+  },
+  {
+    id: 'q22',
+    section: '联机 / 壶 / 社交',
+    prompt: '你在联机里更像哪种角色？',
+    hint: '一般都挺稳定。',
+    options: [
+      { label: '带人过本的', scores: { COOP: 2 } },
+      { label: '负责拍照和站位的', scores: { SNAP: 2 } },
+      { label: '走到哪整活到哪的', scores: { CHAO: 2 } },
+    ],
+  },
+  {
+    id: 'q23',
+    section: '联机 / 壶 / 社交',
+    prompt: '你对尘歌壶最真实的态度是？',
+    hint: '壶玩家和路过玩家很好分。',
+    options: [
+      { label: '会认真摆，细节也会调', scores: { POTR: 2 } },
+      { label: '奖励拿了就行', scores: { DAIL: 1 } },
+      { label: '每次想搞，最后都烂尾', scores: { POTR: 1 }, flags: { RESI: 1 } },
+    ],
+  },
+  {
+    id: 'q24',
+    section: '联机 / 壶 / 社交',
+    prompt: '如果只能带走一句最像你的结果文案，你选哪句？',
+    hint: '这题也在看你最后会落哪边。',
+    options: [
+      { label: '我是那种树脂快满就会难受的人', scores: { FARM: 2 } },
+      { label: '我是那种嘴上不抽，身体很诚实的人', scores: { PULL: 2 } },
+      { label: '我是那种正常玩一会儿就开始整活的人', scores: { CHAO: 2 }, flags: { PAIM: 1 } },
+    ],
+  },
+]
 
 export function buildQuizQuestions() {
-  const pickedBySection = SECTION_ORDER.map((sectionKey) => sample(QUESTION_BANK[sectionKey], 4))
-  const rounds = pickedBySection[0].length
-  const mixed = []
-
-  for (let round = 0; round < rounds; round += 1) {
-    pickedBySection.forEach((sectionQuestions) => {
-      mixed.push(sectionQuestions[round])
-    })
-  }
-
-  return mixed
+  return QUESTIONS.map((question) => ({
+    ...question,
+    options: question.options.map((option) => ({
+      ...option,
+      scores: { ...(option.scores || {}) },
+      flags: { ...(option.flags || {}) },
+    })),
+  }))
 }

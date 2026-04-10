@@ -239,22 +239,22 @@ function App() {
         <section className="intro-screen">
           <div className="intro-card">
             <p className="eyebrow">提瓦特电子审判处</p>
-            <h1>这版不再连着催眠你，而是随机抽题来抓你现行。</h1>
+            <h1>这版先往 SBTI 的骨架上收，不再把它做成普通问卷。</h1>
             <p className="intro-lead">
-              我把原来那种同类题扎堆的问法拆掉了。现在每次会从大题库里抽 24 题，按不同主题交错出题，尽量让你每几题就换一个脑回路，不再像在做流水线问卷。
+              现在是 24 题、每题 3 个选项，题目更短，方向更明确。它应该更像那种“表面随手三选一，实际后台在悄悄给你往某种丢人类型上靠”的测试，而不是一份很长的原神主题调查表。
             </p>
 
             <div className="intro-grid">
               <article className="mini-panel">
-                <strong>这次重点修什么</strong>
+                <strong>这次改的核心</strong>
                 <p>
-                  不是只修文案，而是直接修结构。上一版最大的问题是题目彼此太近，像在用不同说法问同一件事，玩家答到后面会疲劳，甚至会提前看穿结果。
+                  重点不是继续加梗，而是把题型拉回更像 SBTI 的“三选一偏向题”。这样题面会更利落，玩家也更容易凭直觉选，不会老有在填问卷的感觉。
                 </p>
               </article>
               <article className="mini-panel">
-                <strong>现在怎么玩</strong>
+                <strong>现在的方向</strong>
                 <p>
-                  每次随机抽 24 题，中途只插嘴 2 次。题目改成情境、口癖、旧伤、评论区发言和联机事故，不再连续追问同一个维度。
+                  原神味还在，但应该更像 SBTI 那种简短、轻巧、选项有偏向性的题。不是靠长篇解释你，而是靠几道题慢慢把你往某种味道上推。
                 </p>
               </article>
             </div>
@@ -263,7 +263,7 @@ function App() {
               <button type="button" className="primary-btn" onClick={startQuiz}>
                 开始接受审问
               </button>
-              <span className="subtle-note">24 题随机版，节奏更快，但下嘴更损</span>
+              <span className="subtle-note">24 题，3 选 1，中途只插嘴 2 次</span>
             </div>
           </div>
         </section>
@@ -379,15 +379,15 @@ function App() {
 
           <div className="result-grid">
             <article className="result-card">
-              <h3>为什么这版更不容易犯困</h3>
+              <h3>这版在改什么</h3>
               <p>
-                因为它不再连续问同一件事。固定长问卷最容易把人问困，尤其当玩家第三次意识到“这题还是在问我是不是卡池上头”时，传播冲动就已经掉了。
+                这次优先修的是题型，不是题量。之前更像“原神问卷”，现在更想往“原神味的 SBTI”上靠，也就是题目更短、选项更有方向、做题更靠直觉。
               </p>
             </article>
             <article className="result-card">
-              <h3>这版还在赌什么</h3>
+              <h3>接下来还要看什么</h3>
               <p>
-                现在赌的是“每几题就换一种抓包方式”，让玩家没那么容易预测结果，也更容易在中途被某一题突然扎到，从而产生截图欲望。
+                这一版先把骨架掰正，后面最重要的还是两件事：题目是不是像 SBTI 那样轻巧但有梗，以及结果人格能不能像原版那样又损又让人想转发。
               </p>
             </article>
           </div>
