@@ -28,6 +28,8 @@ const HIDDEN_PRIORITY = [
   { code: 'PAIM', min: 4 },
 ]
 
+const NOTICE_STORAGE_KEY = 'rbti_notice_seen_v1'
+
 function cloneMap(map) {
   return Object.keys(map).reduce((acc, key) => {
     acc[key] = map[key]
@@ -146,13 +148,23 @@ function App() {
   const [currentTaunt, setCurrentTaunt] = useState(null)
   const [result, setResult] = useState(null)
   const [copied, setCopied] = useState(false)
-  const [noticeOpen, setNoticeOpen] = useState(true)
+  const [noticeOpen, setNoticeOpen] = useState(() => {
+    if (typeof window === 'undefined') return false
+    return !window.localStorage.getItem(NOTICE_STORAGE_KEY)
+  })
 
   const totalQuestions = quizQuestions.length
   const activeQuestion = quizQuestions[questionIndex]
   const answeredCount = Object.keys(pickedOptions).length
   const progress = totalQuestions ? Math.round((answeredCount / totalQuestions) * 100) : 0
   const topTypes = getTopTypes(scores)
+
+  function closeNotice() {
+    setNoticeOpen(false)
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(NOTICE_STORAGE_KEY, '1')
+    }
+  }
 
   function resetExperience() {
     setScreen('intro')
@@ -168,6 +180,7 @@ function App() {
 
   function startQuiz() {
     const next = freshQuizState()
+    closeNotice()
     setScreen('quiz')
     setQuizQuestions(next.quizQuestions)
     setQuestionIndex(next.questionIndex)
@@ -240,19 +253,19 @@ function App() {
         <section className="intro-screen">
           <div className="intro-card">
             <p className="eyebrow">提瓦特电子审判处</p>
-            <h1>别装了，你在提瓦特什么德行，后台多少知道一点。</h1>
+            <h1>今日不测强度，不测练度，只测你到底有多丢人。</h1>
             <p className="intro-lead">
-              这不是正经人格测试，这是一份对原神玩家日常行为的赛博笔录。你点得越快，后台笑得越大声。
+              这不是正经人格测试，这是提瓦特玩家电子归档系统。你负责三选一，后台负责把你归到最适合被群友嘲笑的那一类。
             </p>
 
             <div className="intro-grid">
               <article className="mini-panel">
                 <strong>这玩意测什么</strong>
-                <p>测你是清体坐牢、卡池上头、深渊记仇，还是表面正常实则随时准备发病。</p>
+                <p>测你是清体坐牢、卡池上头、深渊记仇，还是表面正常其实随时准备发病。</p>
               </article>
               <article className="mini-panel">
-                <strong>怎么测</strong>
-                <p>24 题，3 选 1，中途系统只插嘴两次。你负责点，后台负责记仇。</p>
+                <strong>怎么判</strong>
+                <p>24 题，3 选 1，中途系统只插嘴两次。你负责点，后台负责记仇和归类。</p>
               </article>
             </div>
 
@@ -263,24 +276,33 @@ function App() {
               <button type="button" className="ghost-btn" onClick={() => setNoticeOpen(true)}>
                 查看公告
               </button>
-              <span className="subtle-note">温馨提示：嘴硬不会影响判刑，只会增加笑料</span>
+              <span className="subtle-note">温馨提示：嘴硬不会减刑，只会增加节目效果</span>
             </div>
           </div>
 
           {noticeOpen && (
-            <div className="notice-overlay" role="dialog" aria-modal="true" aria-label="更新公告">
-              <div className="notice-card">
+            <div
+              className="notice-overlay"
+              role="dialog"
+              aria-modal="true"
+              aria-label="更新公告"
+              onClick={closeNotice}
+            >
+              <div className="notice-card" onClick={(event) => event.stopPropagation()}>
+                <button type="button" className="notice-close" onClick={closeNotice} aria-label="关闭公告">
+                  ×
+                </button>
                 <p className="eyebrow">更新公告</p>
-                <h2>这版改了什么</h2>
+                <h2>这版又动了哪些地方</h2>
                 <div className="notice-list">
-                  <p>题型已经收回到更像 `SBTI` 的骨架：24 题、每题 3 个选项，不再做成长篇原神问卷。</p>
+                  <p>题型已经收回到更像 `SBTI` 的骨架：24 题、每题 3 个选项，不再往长问卷那个方向跑偏。</p>
                   <p>首页标语改成更整活的版本，不再把改版说明直接糊在玩家脸上。</p>
-                  <p>题目方向现在更偏“轻巧三选一”，目标是让你凭直觉点，而不是像在做调查表。</p>
+                  <p>题目方向现在更偏“轻巧三选一”，目标是让你凭直觉点，不要再像在做调查表。</p>
                   <p>中途吐槽依然保留 2 次，后台还是会根据你的实时倾向阴阳你。</p>
-                  <p>接下来重点会继续盯两件事：题目有没有 SBTI 那种轻但损的味，以及人格结果够不够让人想截图转发。</p>
+                  <p>接下来重点继续盯两件事：题目有没有 `SBTI` 那种轻但损的味，以及结果够不够让人想截图转发。</p>
                 </div>
                 <div className="notice-actions">
-                  <button type="button" className="primary-btn" onClick={() => setNoticeOpen(false)}>
+                  <button type="button" className="primary-btn" onClick={closeNotice}>
                     行，我知道了
                   </button>
                   <button type="button" className="ghost-btn" onClick={startQuiz}>
