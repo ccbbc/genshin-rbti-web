@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import './App.css'
 import {
+  getDynamicTaunt,
   HIDDEN_META,
   QUESTIONS,
-  TAUNTS,
+  TAUNT_BREAKPOINTS,
   TYPE_META,
   TYPE_ORDER,
 } from './data/rbti'
@@ -67,10 +68,7 @@ function resolveResult(scores, flags) {
 
 function buildShareText(result, scores, flags) {
   const topLines = getTopTypes(scores)
-    .map((code, index) => {
-      const item = TYPE_META[code]
-      return `${index + 1}. ${code} ${item.title} ${scores[code]}分`
-    })
+    .map((code, index) => `${index + 1}. ${code} ${TYPE_META[code].title} ${scores[code]}分`)
     .join('\n')
 
   const hiddenLines = Object.entries(flags)
@@ -82,12 +80,12 @@ function buildShareText(result, scores, flags) {
     `我在 RBTI 里测出来是 ${result.code}（${result.meta.title}）`,
     result.meta.shareLine,
     '',
-    `系统结论：${result.meta.summary}`,
+    `系统判词：${result.meta.summary}`,
     '',
-    '前三人格倾向：',
+    '后台判你最像这仨：',
     topLines,
     hiddenLines ? '' : null,
-    hiddenLines ? `隐藏波动：${hiddenLines}` : null,
+    hiddenLines ? `隐藏病灶：${hiddenLines}` : null,
     '',
     'MBTI 过时了，RBTI 来了。',
   ]
@@ -101,7 +99,7 @@ function App() {
   const [scores, setScores] = useState(cloneMap(EMPTY_SCORES))
   const [flags, setFlags] = useState(cloneMap(EMPTY_FLAGS))
   const [pickedOptions, setPickedOptions] = useState({})
-  const [tauntIndex, setTauntIndex] = useState(0)
+  const [currentTaunt, setCurrentTaunt] = useState(null)
   const [result, setResult] = useState(null)
   const [copied, setCopied] = useState(false)
 
@@ -116,7 +114,7 @@ function App() {
     setScores(cloneMap(EMPTY_SCORES))
     setFlags(cloneMap(EMPTY_FLAGS))
     setPickedOptions({})
-    setTauntIndex(0)
+    setCurrentTaunt(null)
     setResult(null)
     setCopied(false)
   }
@@ -127,7 +125,7 @@ function App() {
     setScores(cloneMap(EMPTY_SCORES))
     setFlags(cloneMap(EMPTY_FLAGS))
     setPickedOptions({})
-    setTauntIndex(0)
+    setCurrentTaunt(null)
     setResult(null)
     setCopied(false)
   }
@@ -162,8 +160,10 @@ function App() {
       return
     }
 
-    if (nextCount % 6 === 0) {
-      setTauntIndex(nextCount / 6 - 1)
+    const tauntStage = TAUNT_BREAKPOINTS.indexOf(nextCount)
+    if (tauntStage !== -1) {
+      const topType = getTopTypes(nextScores)[0]
+      setCurrentTaunt(getDynamicTaunt(tauntStage, topType, nextFlags))
       setQuestionIndex(questionIndex + 1)
       setScreen('taunt')
       return
@@ -190,26 +190,30 @@ function App() {
       {screen === 'intro' && (
         <section className="intro-screen">
           <div className="intro-card">
-            <p className="eyebrow">提瓦特人格审判中心</p>
+            <p className="eyebrow">提瓦特电子审判处</p>
             <h1>MBTI 过时了，RBTI 来了。</h1>
             <p className="intro-lead">
-              别装了，你的树脂、原石、深渊和嘴硬程度，早就把你在提瓦特到底是个什么东西供出来了。
+              这玩意不是心理测试，是把你的原神日常拿出来公开尸检。树脂、原石、深渊、剧诗、开图、嘴硬，都会把你在提瓦特到底是什么成分抖出来。
             </p>
 
             <div className="intro-grid">
               <article className="mini-panel">
-                <strong>这不是心理测试</strong>
-                <p>这是一份原神玩家赛博审判书。系统会根据你的抽卡创伤、树脂焦虑和整活浓度，对你的人格进行不太温柔的归档。</p>
+                <strong>先说清楚</strong>
+                <p>
+                  这版明显更往中文原神社区的整活口吻改了，不走温柔分析路线，走的是“系统一边装正经，一边把你挂出来示众”的路线。
+                </p>
               </article>
               <article className="mini-panel">
-                <strong>试玩版说明</strong>
-                <p>当前版本共 36 题，每 6 题插播一次系统吐槽。结果仅供娱乐，但如果它骂你骂得太准，也请先别急着怪网页。</p>
+                <strong>试玩机制</strong>
+                <p>
+                  当前版本 36 题，中途系统只会嘴你两次，而且会看你实时答题倾向来阴阳你，不再是固定播报。你要是被骂得太准，先别怪网页。
+                </p>
               </article>
             </div>
 
             <div className="intro-actions">
               <button type="button" className="primary-btn" onClick={startQuiz}>
-                开始受审
+                开始验尸
               </button>
               <span className="subtle-note">预计耗时 8 到 12 分钟</span>
             </div>
@@ -221,7 +225,7 @@ function App() {
         <section className="quiz-screen">
           <header className="topbar">
             <div>
-              <p className="eyebrow">RBTI Beta</p>
+              <p className="eyebrow">RBTI 内测版</p>
               <h2>{activeQuestion.section}</h2>
             </div>
             <div className="progress-meta">
@@ -257,22 +261,22 @@ function App() {
           </article>
 
           <footer className="quiz-footer">
-            <p>系统提醒：你可以嘴硬，但每一道选择都会留下电子案底。</p>
+            <p>系统提醒：每一道选择都会留下案底，你现在嘴硬，结果页会替你结案。</p>
             <button type="button" className="ghost-btn" onClick={resetExperience}>
-              退出重来
+              不测了，先跑
             </button>
           </footer>
         </section>
       )}
 
-      {screen === 'taunt' && (
+      {screen === 'taunt' && currentTaunt && (
         <section className="taunt-screen">
           <div className="taunt-card">
-            <p className="eyebrow">系统插播</p>
-            <h2>{TAUNTS[tauntIndex].title}</h2>
-            <p>{TAUNTS[tauntIndex].body}</p>
+            <p className="eyebrow">系统插嘴</p>
+            <h2>{currentTaunt.title}</h2>
+            <p>{currentTaunt.body}</p>
             <button type="button" className="primary-btn" onClick={() => setScreen('quiz')}>
-              继续受审
+              行，继续骂
             </button>
           </div>
         </section>
@@ -283,7 +287,7 @@ function App() {
           <div className="result-hero">
             <div className="result-card main-result">
               <p className="eyebrow">
-                {result.kind === 'hidden' ? '隐藏人格已接管' : '你的主人格'}
+                {result.kind === 'hidden' ? '隐藏人格接管现场' : '系统最终判词'}
               </p>
               <h2>
                 {result.code}
@@ -295,16 +299,16 @@ function App() {
 
               <div className="result-actions">
                 <button type="button" className="primary-btn" onClick={copyResult}>
-                  {copied ? '已复制结果文案' : '复制结果文案'}
+                  {copied ? '结果文案已复制' : '复制结果文案'}
                 </button>
                 <button type="button" className="ghost-btn" onClick={startQuiz}>
-                  重新受审
+                  再测一次
                 </button>
               </div>
             </div>
 
             <aside className="result-card side-panel">
-              <h3>人格浓度排行榜</h3>
+              <h3>后台判你最像这仨</h3>
               <div className="rank-list">
                 {getTopTypes(scores).map((code, index) => (
                   <div key={code} className="rank-item">
@@ -318,7 +322,7 @@ function App() {
                 ))}
               </div>
 
-              <h3>异常波动</h3>
+              <h3>隐藏病灶</h3>
               <div className="flag-grid">
                 {Object.entries(flags).map(([code, value]) => (
                   <div key={code} className="flag-item">
@@ -332,15 +336,15 @@ function App() {
 
           <div className="result-grid">
             <article className="result-card">
-              <h3>系统备注</h3>
+              <h3>友情提示</h3>
               <p>
-                本测试仅供娱乐，不适用于择偶、招人、分手、算命、深渊配队仲裁以及任何形式的人生判决。它要是太准，你可以怪自己，不要怪前端。
+                这玩意只适合拿来发群、互损、钓评论，不适合拿去相亲、招人、查成分、判断谁更懂原神，也不适合拿去给自己上价值。
               </p>
             </article>
             <article className="result-card">
-              <h3>试玩建议</h3>
+              <h3>调研建议</h3>
               <p>
-                如果你准备拿这版去试水，可以先观察三件事：玩家是否愿意答完 36 题、是否愿意截图结果、以及他们最爱在评论区认领哪种人格。
+                这版现在最值得看三件事：36 题会不会掉人、中途动态吐槽会不会让人继续点、以及哪种人格最容易被玩家拿去评论区对号入座。
               </p>
             </article>
           </div>
