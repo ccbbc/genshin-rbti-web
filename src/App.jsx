@@ -122,6 +122,12 @@ function buildDimensionSummary(dimensionTotals, dimensionCounts) {
   }).join(' / ')
 }
 
+function getDimensionLevelLabel(meta, level) {
+  if (level === 'L') return meta.low
+  if (level === 'H') return meta.high
+  return meta.mid
+}
+
 function buildShareText(result, typeScores, flags, dimensionTotals, dimensionCounts) {
   const topLines = getTopTypes(typeScores)
     .map((code, index) => `${index + 1}. ${code} ${TYPE_META[code].title} ${typeScores[code]}%`)
@@ -295,17 +301,17 @@ function App() {
             <p className="eyebrow">提瓦特电子审判处</p>
             <h1>今日不测练度，不测欧气，只测你在提瓦特到底是什么味。</h1>
             <p className="intro-lead">
-              这次真的往 `SBTI` 的骨架上靠了。24题，三选一，题目都很短，后台不直接给你分类，而是先看你在树脂、卡池、剧情、联机这些小场景里，到底更像哪种反应。
+              这是一个专门给原神玩家做身份归档的小网页。你负责凭直觉三选一，后台负责把你归到最适合被群友认领和调侃的那一类。
             </p>
 
             <div className="intro-grid">
               <article className="mini-panel">
-                <strong>这版像什么</strong>
-                <p>更像“原神味的 SBTI”，不是一张很长的原神问卷。你负责凭直觉点，后台负责偷偷归类。</p>
+                <strong>这玩意测什么</strong>
+                <p>测你是爱清体、爱上头、爱较真、爱截图，还是表面正常其实一进提瓦特就容易开始发病。</p>
               </article>
               <article className="mini-panel">
-                <strong>这版测什么</strong>
-                <p>表面测的是选择，实际上测的是你是爱清体、爱上头、爱较真、爱整活，还是表面正常实则一直在发病。</p>
+                <strong>怎么玩</strong>
+                <p>24题，3选1，中途系统只插嘴两次。你负责点，后台负责偷偷记账，最后再给你判个像样的身份。</p>
               </article>
             </div>
 
@@ -338,6 +344,7 @@ function App() {
                   <p>题型已经整体换成 `SBTI` 风格：24题、每题3选1，不再往长问卷方向乱长。</p>
                   <p>后台现在不再直接按“地图党/剧情党”给你贴标签，而是先累计 8 个隐藏维度，再去匹配人格模板。</p>
                   <p>人格结果也改成更像“可认领身份梗”的写法，目标是让你测完更想截图，而不是只觉得“有点准”。</p>
+                  <p>结果页现在会把 8 个维度单独展开，给出一段相对正经的人格分析，不再只是被骂完就结束。</p>
                   <p>中途吐槽依旧保留 2 次，但会根据你当前最像的人格和隐藏病灶来阴阳你。</p>
                   <p>接下来继续要盯的重点，是把每个人格写得更像真正会被网友认领和传播的身份标签。</p>
                 </div>
@@ -482,6 +489,26 @@ function App() {
               <h3>接下来还会动哪</h3>
               <p>现在骨架已经像 SBTI 了，下一步最值得继续抠的，就是把人格名字、签名和结果文案写得更像真正会被网友认领的身份梗。</p>
             </article>
+          </div>
+
+          <div className="result-grid dimension-grid">
+            {DIMENSION_ORDER.map((code) => {
+              const meta = DIMENSION_META[code]
+              const level = dimensionLevels[code]
+              return (
+                <article key={code} className="result-card dimension-card">
+                  <div className="dimension-head">
+                    <span className="dimension-code">{code}</span>
+                    <div>
+                      <h3>{meta.label}</h3>
+                      <p className="dimension-label">{getDimensionLevelLabel(meta, level)}</p>
+                    </div>
+                    <strong className="dimension-level">{level}</strong>
+                  </div>
+                  <p>{meta.analysis[level]}</p>
+                </article>
+              )
+            })}
           </div>
         </section>
       )}

@@ -467,6 +467,52 @@
   padding: 24px;
 }
 
+.dimension-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dimension-card {
+  padding: 22px;
+}
+
+.dimension-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 14px;
+}
+
+.dimension-code {
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(169, 77, 43, 0.12);
+  color: var(--accent-strong);
+  font-weight: 800;
+  letter-spacing: 0.06em;
+}
+
+.dimension-label {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.dimension-level {
+  margin-left: auto;
+  color: var(--accent-strong);
+  font-size: 28px;
+  line-height: 1;
+}
+
+.dimension-card p {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.85;
+}
+
 @media (max-width: 920px) {
   .app-shell {
     padding: 16px;
