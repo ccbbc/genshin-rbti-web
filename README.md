@@ -1,48 +1,38 @@
-# RBTI Web
+# 实时公交更新后端
 
-`RBTI` 是一个面向原神玩家的娱乐化人格测试网页原型，用树脂、原石、深渊、剧情和整活习惯来“审判”玩家在提瓦特到底是个什么人格。
+这个仓库部署在 Vercel 上，用于给实时公交 Android 客户端提供自动更新信息。
 
-当前版本特性：
+可访问域名：
 
-- 36 道长题库
-- 每 6 题插入一次系统吐槽卡
-- 12 个常规人格
-- 4 个隐藏人格
-- 可复制结果文案，方便发群试水
+- `https://ccbbc-backend.vercel.app/`
+- `https://ccbbc-backend-ccbbcs-projects.vercel.app/`
+- `https://www.ccbbc.asia/`
 
-## 本地运行
+## 接口
 
-```bash
-npm install
-npm run dev
+```text
+GET /api/update
 ```
 
-## 构建
+返回示例：
 
-```bash
-npm run build
+```json
+{
+  "appId": "com.codex.minimalbus",
+  "versionCode": 2,
+  "versionName": "1.1",
+  "force": false,
+  "releaseNotes": "新增自动更新检查。",
+  "apkUrl": "https://ccbbc-backend.vercel.app/downloads/minimal-bus-v2.apk"
+}
 ```
 
-## 部署到 Vercel
+Android 客户端会比较远端 `versionCode` 与本地 `BuildConfig.VERSION_CODE`。远端更高时弹出更新提示，并打开 `apkUrl` 下载。
 
-这是标准 Vite 静态站点，直接导入到 Vercel 即可。
+## 发布新版本
 
-1. 把项目推到 GitHub 公开仓库
-2. 在 Vercel 中选择 `Add New Project`
-3. 导入该 GitHub 仓库
-4. Framework Preset 选择 `Vite`
-5. 保持默认构建设置并部署
-
-默认配置通常为：
-
-- Build Command: `npm run build`
-- Output Directory: `dist`
-
-## 当前调研重点
-
-建议上线后重点观察：
-
-- 玩家是否愿意答完 36 题
-- 中途吐槽卡是否能提升停留
-- 哪些人格最容易被截图传播
-- 哪些题目最容易在评论区引发认领和互相补刀
+1. 在 Android 项目中递增 `versionCode` 和 `versionName`。
+2. 构建 APK。
+3. 将 APK 放入 `public/downloads/`。
+4. 修改 `api/update.js` 中的版本号、说明和 APK 文件名。
+5. 推送到 GitHub，Vercel 会自动部署。
